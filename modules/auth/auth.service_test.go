@@ -180,6 +180,32 @@ func TestAuthService_Register(t *testing.T) {
 		}
 	})
 
+	t.Run("mais de 3 categorias", func(t *testing.T) {
+		repoCalled := false
+		repo := &mockAuthRepository{
+			RegisterFn: func(dto domain.RegisterRequestDTO, hashedPassword string) (domain.User, []uint, error) {
+				repoCalled = true
+				return domain.User{}, nil, nil
+			},
+		}
+
+		svc := authmodule.NewAuthService(repo, &mockTokenMaker{})
+		dto := validHelperDTO()
+		dto.Categories = []uint{1, 2, 3, 4}
+
+		_, err := svc.Register(dto)
+
+		if err == nil {
+			t.Fatal("esperado erro para mais de 3 categorias, obteve nil")
+		}
+		if !strings.Contains(err.Error(), "invalid categories") {
+			t.Errorf("mensagem de erro inesperada: %v", err)
+		}
+		if repoCalled {
+			t.Error("o repositório não deve ser chamado quando há mais de 3 categorias")
+		}
+	})
+
 	t.Run("helper com documento inválido (CPF deve ter 11 dígitos)", func(t *testing.T) {
 		repo := &mockAuthRepository{
 			RegisterFn: func(dto domain.RegisterRequestDTO, hashedPassword string) (domain.User, []uint, error) {

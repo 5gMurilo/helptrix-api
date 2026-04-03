@@ -9,6 +9,8 @@ const (
 	UserTypeHelper   = "helper"
 	UserTypeBusiness = "business"
 
+	MaxCategoriesPerUserRegistration = 3
+
 	ProposalStatusPending    = "pending"
 	ProposalStatusAccepted   = "accepted"
 	ProposalStatusRefused    = "refused"

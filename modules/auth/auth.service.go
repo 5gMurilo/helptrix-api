@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -25,6 +26,10 @@ func NewAuthService(repo authinterfaces.IAuthRepository, tokenMaker authinterfac
 func (s *AuthService) Register(dto domain.RegisterRequestDTO) (domain.RegisterResponseDTO, error) {
 	if dto.UserType != utils.UserTypeHelper && dto.UserType != utils.UserTypeBusiness {
 		return domain.RegisterResponseDTO{}, errors.New("invalid user_type: must be 'helper' or 'business'")
+	}
+
+	if len(dto.Categories) > utils.MaxCategoriesPerUserRegistration {
+		return domain.RegisterResponseDTO{}, fmt.Errorf("invalid categories: at most %d categories allowed", utils.MaxCategoriesPerUserRegistration)
 	}
 
 	if dto.UserType == utils.UserTypeHelper && !utils.CPFRegex.MatchString(dto.Document) {
