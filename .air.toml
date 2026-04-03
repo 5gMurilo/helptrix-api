@@ -1,0 +1,11 @@
+root = "."
+
+[build]
+cmd = "go build -o ./tmp/main ./app/..."
+bin = "./tmp/main"
+include_ext = ["go", "toml"]
+exclude_dir = ["tmp", "vendor", ".dr_ai", "docs"]
+delay = 1000
+
+[log]
+time = true

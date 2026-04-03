@@ -1,0 +1,33 @@
+.dev/
+.claude/
+.dr_ai/
+.cursor/
+docs/app-specs/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# Air
+tmp/
+
+# Environment
+.env
+
+# Swagger generated
+docs/swagger/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,329 @@
+package repository
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/5gMurilo/helptrix-api/core/domain"
+	userinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/user"
+	"github.com/5gMurilo/helptrix-api/core/utils"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type userRepository struct {
+	db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) userinterfaces.IUserRepository {
+	return &userRepository{db: db}
+}
+
+func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilters) (domain.GetProfileResponseDTO, error) {
+	var user domain.User
+
+	result := r.db.
+		Preload("Address").
+		Preload("Categories").
+		Preload("Services").
+		Preload("Services.Category").
+		First(&user, "id = ?", userID)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return domain.GetProfileResponseDTO{}, utils.ErrUserNotFound
+		}
+		return domain.GetProfileResponseDTO{}, result.Error
+	}
+
+	// Map categories
+	categories := make([]domain.ProfileCategoryDTO, 0, len(user.Categories))
+	for _, c := range user.Categories {
+		categories = append(categories, domain.ProfileCategoryDTO{
+			ID:          c.ID,
+			Name:        c.Name,
+			Description: c.Description,
+		})
+	}
+
+	// Map address
+	var address *domain.ProfileAddressDTO
+	if user.Address.ID != uuid.Nil {
+		address = &domain.ProfileAddressDTO{
+			Street:       user.Address.Street,
+			Number:       user.Address.Number,
+			Complement:   user.Address.Complement,
+			Neighborhood: user.Address.Neighborhood,
+			City:         user.Address.City,
+			State:        user.Address.State,
+		}
+	}
+
+	// Map services with optional in-memory filters
+	services := make([]domain.ServiceResponseDTO, 0)
+	for _, svc := range user.Services {
+		var actuationDays []string
+		if len(svc.ActuationDays) > 0 {
+			_ = json.Unmarshal(svc.ActuationDays, &actuationDays)
+		}
+		if actuationDays == nil {
+			actuationDays = []string{}
+		}
+
+		// Apply CategoryID filter
+		if filters.CategoryID != nil && svc.CategoryID != *filters.CategoryID {
+			continue
+		}
+
+		// Apply ActuationDays filter
+		if len(filters.ActuationDays) > 0 {
+			if !hasIntersection(actuationDays, filters.ActuationDays) {
+				continue
+			}
+		}
+
+		var photos []string
+		if len(svc.Photos) > 0 {
+			_ = json.Unmarshal(svc.Photos, &photos)
+		}
+		if photos == nil {
+			photos = []string{}
+		}
+
+		// Rate stats — reviews table may not exist yet; default to 0/0
+		rateStats := domain.ProfileServiceRateDTO{
+			RateQuantity:  0,
+			AverageRating: 0,
+		}
+		r.queryRateStats(svc.UserID, svc.CategoryID, &rateStats)
+
+		services = append(services, domain.ServiceResponseDTO{
+			ID:            svc.ID,
+			Name:          svc.Name,
+			Description:   svc.Description,
+			ActuationDays: actuationDays,
+			Value:         svc.Value,
+			StartTime:     svc.StartTime,
+			EndTime:       svc.EndTime,
+			OfferSince:    svc.OfferSince,
+			Category: domain.ServiceCategoryDTO{
+				ID:   svc.Category.ID,
+				Name: svc.Category.Name,
+			},
+			Photos: photos,
+		})
+
+		_ = rateStats // available for future use when reviews table is added
+	}
+
+	dto := domain.GetProfileResponseDTO{
+		ID:             user.ID,
+		Name:           user.Name,
+		Email:          user.Email,
+		Phone:          user.Phone,
+		Biography:      user.Biography,
+		ProfilePicture: user.ProfilePicture,
+		UserType:       user.UserType,
+		Categories:     categories,
+		Address:        address,
+		Reviews:        []interface{}{},
+		Services:       services,
+		CreatedAt:      user.CreatedAt,
+	}
+
+	return dto, nil
+}
+
+// queryRateStats attempts to fetch aggregated review stats. If the reviews table
+// does not exist yet, it silently leaves stats at 0/0.
+func (r *userRepository) queryRateStats(userID uuid.UUID, categoryID uint, stats *domain.ProfileServiceRateDTO) {
+	type rateResult struct {
+		RateQuantity  int     `gorm:"column:rate_quantity"`
+		AverageRating float64 `gorm:"column:average_rating"`
+	}
+	var res rateResult
+	err := r.db.Raw(
+		`SELECT COUNT(*) AS rate_quantity, COALESCE(AVG(rate), 0) AS average_rating
+		 FROM reviews
+		 WHERE reviewed_user_id = ? AND category_id = ? AND deleted_at IS NULL`,
+		userID, categoryID,
+	).Scan(&res).Error
+	if err == nil {
+		stats.RateQuantity = res.RateQuantity
+		stats.AverageRating = res.AverageRating
+	}
+}
+
+func hasIntersection(a, b []string) bool {
+	set := make(map[string]struct{}, len(b))
+	for _, v := range b {
+		set[v] = struct{}{}
+	}
+	for _, v := range a {
+		if _, ok := set[v]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfileRequestDTO) error {
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Step 1: verify user exists
+	var user domain.User
+	if err := tx.First(&user, "id = ?", userID).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return utils.ErrUserNotFound
+		}
+		return fmt.Errorf("error finding user: %w", err)
+	}
+
+	// Step 2: coupling check — if categories are being updated, verify none of the
+	// removed categories have linked active services
+	if len(dto.Categories) > 0 {
+		var currentUCs []domain.UserCategory
+		if err := tx.Where("user_id = ?", userID).Find(&currentUCs).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error fetching current user categories: %w", err)
+		}
+
+		newCatSet := make(map[uint]struct{}, len(dto.Categories))
+		for _, id := range dto.Categories {
+			newCatSet[id] = struct{}{}
+		}
+
+		var removedCategoryIDs []uint
+		for _, uc := range currentUCs {
+			if _, stillPresent := newCatSet[uc.CategoryID]; !stillPresent {
+				removedCategoryIDs = append(removedCategoryIDs, uc.CategoryID)
+			}
+		}
+
+		if len(removedCategoryIDs) > 0 {
+			var count int64
+			if err := tx.Model(&domain.Service{}).
+				Where("user_id = ? AND category_id IN ? AND deleted_at IS NULL", userID, removedCategoryIDs).
+				Count(&count).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error checking linked services: %w", err)
+			}
+			if count > 0 {
+				tx.Rollback()
+				return utils.ErrCategoryHasLinkedServices
+			}
+		}
+	}
+
+	// Step 3: update user scalar fields (only non-empty values)
+	userUpdates := map[string]interface{}{}
+	if dto.Email != "" {
+		userUpdates["email"] = dto.Email
+	}
+	if dto.Phone != "" {
+		userUpdates["phone"] = dto.Phone
+	}
+	if dto.Biography != "" {
+		userUpdates["biography"] = dto.Biography
+	}
+	if dto.ProfilePicture != "" {
+		userUpdates["profile_picture"] = dto.ProfilePicture
+	}
+	if len(userUpdates) > 0 {
+		if err := tx.Model(&domain.User{}).Where("id = ?", userID).Updates(userUpdates).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error updating user fields: %w", err)
+		}
+	}
+
+	// Step 4: update address (upsert)
+	if dto.Address != nil {
+		var existingAddr domain.Address
+		addrErr := tx.Where("user_id = ?", userID).First(&existingAddr).Error
+		if addrErr != nil && !errors.Is(addrErr, gorm.ErrRecordNotFound) {
+			tx.Rollback()
+			return fmt.Errorf("error fetching address: %w", addrErr)
+		}
+
+		if errors.Is(addrErr, gorm.ErrRecordNotFound) {
+			newAddr := domain.Address{
+				UserID:       userID,
+				Street:       dto.Address.Street,
+				Number:       dto.Address.Number,
+				Complement:   dto.Address.Complement,
+				Neighborhood: dto.Address.Neighborhood,
+				City:         dto.Address.City,
+				State:        dto.Address.State,
+			}
+			if err := tx.Create(&newAddr).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error creating address: %w", err)
+			}
+		} else {
+			addrUpdates := map[string]interface{}{
+				"street":       dto.Address.Street,
+				"number":       dto.Address.Number,
+				"complement":   dto.Address.Complement,
+				"neighborhood": dto.Address.Neighborhood,
+				"city":         dto.Address.City,
+				"state":        dto.Address.State,
+			}
+			if err := tx.Model(&domain.Address{}).Where("user_id = ?", userID).Updates(addrUpdates).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error updating address: %w", err)
+			}
+		}
+	}
+
+	// Step 5: replace user categories if provided
+	if len(dto.Categories) > 0 {
+		if err := tx.Where("user_id = ?", userID).Delete(&domain.UserCategory{}).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error removing old user categories: %w", err)
+		}
+		for _, categoryID := range dto.Categories {
+			uc := domain.UserCategory{
+				UserID:     userID,
+				CategoryID: categoryID,
+			}
+			if err := tx.Create(&uc).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error inserting new user category: %w", err)
+			}
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("error committing update transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) DeleteProfile(userID uuid.UUID) error {
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	result := tx.Where("id = ?", userID).Delete(&domain.User{})
+	if result.Error != nil {
+		tx.Rollback()
+		return fmt.Errorf("error deleting user: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		return utils.ErrUserNotFound
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("error committing delete transaction: %w", err)
+	}
+
+	return nil
+}

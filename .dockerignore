@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Development artifacts
+tmp/
+vendor/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# DR_AI framework
+.dr_ai/
+
+# Documentation
+docs/
+*.md
+
+# Docker files (exclude from build context)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Go test and build artifacts
+*.exe
+*.test
+*.out
+
+# Air configuration
+.air.toml
