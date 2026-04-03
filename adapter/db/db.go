@@ -9,6 +9,11 @@ import (
 )
 
 func Connect() (*gorm.DB, error) {
+
+	if os.Getenv("DB_URL") != "" {
+		return gorm.Open(postgres.Open(os.Getenv("DB_URL")), &gorm.Config{})
+	}
+    
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=UTC",
 		os.Getenv("DB_HOST"),
