@@ -81,11 +81,11 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "10000"
 	}
 
 	log.Printf("starting server on port %s", port)
-	
+
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
