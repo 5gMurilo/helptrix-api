@@ -21,10 +21,12 @@ import (
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/adapter/db"
 	"github.com/5gMurilo/helptrix-api/adapter/db/repository"
+	"github.com/5gMurilo/helptrix-api/adapter/email"
 	adapterhttp "github.com/5gMurilo/helptrix-api/adapter/http"
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	authmodule "github.com/5gMurilo/helptrix-api/modules/auth"
 	categorymodule "github.com/5gMurilo/helptrix-api/modules/category"
+	otpmodule "github.com/5gMurilo/helptrix-api/modules/otp"
 	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
 	servicemodule "github.com/5gMurilo/helptrix-api/modules/service"
 	usermodule "github.com/5gMurilo/helptrix-api/modules/user"
@@ -48,6 +50,7 @@ func main() {
 		&domain.UserCategory{},
 		&domain.Service{},
 		&domain.Proposal{},
+		&domain.OTP{},
 	); err != nil {
 		log.Fatalf("failed to run database migrations: %v", err)
 	}
@@ -77,7 +80,12 @@ func main() {
 	proposalSvc := proposalmodule.NewProposalService(proposalRepo)
 	proposalCtrl := proposalmodule.NewProposalController(proposalSvc)
 
-	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl)
+	emailSender := email.NewResendEmailSender()
+	otpRepo := repository.NewOtpRepository(gormDB)
+	otpSvc := otpmodule.NewOtpService(otpRepo, emailSender)
+	otpCtrl := otpmodule.NewOtpController(otpSvc)
+
+	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl)
 
 	port := os.Getenv("PORT")
 	if port == "" {
