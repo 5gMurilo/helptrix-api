@@ -10,7 +10,8 @@ import (
 //
 //	@name	LoginResponseDTO
 type LoginResponseDTO struct {
-	Token string `json:"token"`
+	ID    uuid.UUID `json:"id"`
+	Token string    `json:"token"`
 }
 
 // RegisterResponseDTO represents the response payload after successful user registration.
