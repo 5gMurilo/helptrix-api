@@ -160,6 +160,128 @@ const docTemplate = `{
                 }
             }
         },
+        "/otp/confirm": {
+            "post": {
+                "description": "Validates the submitted 4-digit OTP code and marks it as confirmed",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "otp"
+                ],
+                "summary": "Confirm OTP",
+                "parameters": [
+                    {
+                        "description": "Confirm OTP request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.ConfirmOTPRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ConfirmOTPResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/otp/send": {
+            "post": {
+                "description": "Generates a 4-digit OTP, invalidates any existing waiting OTP for the email, and delivers it by email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "otp"
+                ],
+                "summary": "Send OTP",
+                "parameters": [
+                    {
+                        "description": "Send OTP request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.SendOTPRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.SendOTPResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/proposal": {
             "get": {
                 "security": [
@@ -1183,6 +1305,29 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.ConfirmOTPRequestDTO": {
+            "type": "object",
+            "required": [
+                "code",
+                "id"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.ConfirmOTPResponseDTO": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.CreateProposalRequestDTO": {
             "type": "object",
             "required": [
@@ -1321,6 +1466,9 @@ const docTemplate = `{
         "domain.LoginResponseDTO": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "token": {
                     "type": "string"
                 }
@@ -1461,6 +1609,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.SendOTPRequestDTO": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.SendOTPResponseDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "message": {
                     "type": "string"
                 }
             }
