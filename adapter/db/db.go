@@ -8,10 +8,17 @@ import (
 	"gorm.io/gorm"
 )
 
+func postgresConnectionURL() string {
+	if s := os.Getenv("DATABASE_URL"); s != "" {
+		return s
+	}
+	return os.Getenv("DB_URL")
+}
+
 func Connect() (*gorm.DB, error) {
 
-	if os.Getenv("DB_URL") != "" {
-		return gorm.Open(postgres.Open(os.Getenv("DB_URL")), &gorm.Config{})
+	if dsn := postgresConnectionURL(); dsn != "" {
+		return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	}
     
 	dsn := fmt.Sprintf(
