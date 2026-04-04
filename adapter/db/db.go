@@ -20,7 +20,7 @@ func Connect() (*gorm.DB, error) {
 	if dsn := postgresConnectionURL(); dsn != "" {
 		return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	}
-    
+
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=UTC",
 		os.Getenv("DB_HOST"),
