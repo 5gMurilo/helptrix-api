@@ -34,6 +34,7 @@ import (
 	servicemodule "github.com/5gMurilo/helptrix-api/modules/service"
 	uploadermodule "github.com/5gMurilo/helptrix-api/modules/uploader"
 	uploaderstrategies "github.com/5gMurilo/helptrix-api/modules/uploader/strategies"
+	helpermodule "github.com/5gMurilo/helptrix-api/modules/helper"
 	usermodule "github.com/5gMurilo/helptrix-api/modules/user"
 )
 
@@ -105,7 +106,11 @@ func main() {
 	uploaderSvc := uploadermodule.NewUploaderService(strategies)
 	uploaderCtrl := uploadermodule.NewUploaderController(uploaderSvc)
 
-	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl, uploaderCtrl)
+	helperRepo := repository.NewHelperRepository(gormDB)
+	helperSvc := helpermodule.NewHelperService(helperRepo)
+	helperCtrl := helpermodule.NewHelperController(helperSvc)
+
+	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl, uploaderCtrl, helperCtrl)
 
 	port := os.Getenv("PORT")
 	if port == "" {

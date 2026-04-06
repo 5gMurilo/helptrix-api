@@ -38,6 +38,7 @@ var (
 	ErrCategoryHasLinkedServices = errors.New("category has linked services and cannot be removed")
 	ErrServiceNameNotUnique      = errors.New("a service with this name already exists for this user")
 	ErrHelperOnly                = errors.New("this action is restricted to helper users")
+	ErrBusinessOnly              = errors.New("this action is restricted to business users")
 	ErrCategoryNotAssignedToUser = errors.New("category is not assigned to this user")
 
 	ErrInvalidValueFormat     = errors.New("invalid value format")
