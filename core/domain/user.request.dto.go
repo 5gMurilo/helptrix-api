@@ -10,6 +10,7 @@ type AddressUpdateDTO struct {
 	Neighborhood string `json:"neighborhood"`
 	City         string `json:"city"`
 	State        string `json:"state"`
+	ZipCode      string `json:"zip_code"`
 }
 
 // UpdateProfileRequestDTO holds the optional fields a user may update on their profile.
