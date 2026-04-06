@@ -14,7 +14,7 @@ type Address struct {
 	Number       string         `gorm:"not null" json:"number"`
 	Complement   string         `json:"complement,omitempty"`
 	Neighborhood string         `gorm:"not null" json:"neighborhood"`
-	ZipCode      string         `gorm:"not null" json:"zip_code"`
+	ZipCode      string         `json:"zip_code"`
 	City         string         `gorm:"not null" json:"city"`
 	State        string         `gorm:"not null" json:"state"`
 	CreatedAt    time.Time      `json:"created_at"`

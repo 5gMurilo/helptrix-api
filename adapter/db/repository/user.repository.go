@@ -288,7 +288,18 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfil
 			tx.Rollback()
 			return fmt.Errorf("error removing old user categories: %w", err)
 		}
+
+		uniqueCategoryIDs := make([]uint, 0, len(dto.Categories))
+		seenCategoryIDs := make(map[uint]struct{}, len(dto.Categories))
 		for _, categoryID := range dto.Categories {
+			if _, alreadyAdded := seenCategoryIDs[categoryID]; alreadyAdded {
+				continue
+			}
+			seenCategoryIDs[categoryID] = struct{}{}
+			uniqueCategoryIDs = append(uniqueCategoryIDs, categoryID)
+		}
+
+		for _, categoryID := range uniqueCategoryIDs {
 			uc := domain.UserCategory{
 				UserID:     userID,
 				CategoryID: categoryID,
