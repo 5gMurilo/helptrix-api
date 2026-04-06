@@ -305,6 +305,31 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfil
 	return nil
 }
 
+func (r *userRepository) GetProfilePicture(userID uuid.UUID) (string, error) {
+	var user domain.User
+
+	result := r.db.Select("profile_picture").First(&user, "id = ?", userID)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return "", utils.ErrUserNotFound
+		}
+		return "", fmt.Errorf("error fetching profile picture: %w", result.Error)
+	}
+
+	return user.ProfilePicture, nil
+}
+
+func (r *userRepository) UpdateProfilePicture(userID uuid.UUID, url string) error {
+	result := r.db.Model(&domain.User{}).Where("id = ?", userID).Update("profile_picture", url)
+	if result.Error != nil {
+		return fmt.Errorf("error updating profile picture: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return utils.ErrUserNotFound
+	}
+	return nil
+}
+
 func (r *userRepository) DeleteProfile(userID uuid.UUID) error {
 	tx := r.db.Begin()
 	if tx.Error != nil {

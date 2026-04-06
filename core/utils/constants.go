@@ -47,4 +47,6 @@ var (
 	ErrProposalInvalidStatus   = errors.New("invalid proposal status or transition")
 	ErrProposalUnauthorized    = errors.New("user is not authorized to perform this status change")
 	ErrNotProposalParticipant  = errors.New("user is not a participant of this proposal")
+
+	ErrInvalidImageType = errors.New("invalid image type")
 )
