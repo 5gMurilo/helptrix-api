@@ -59,4 +59,6 @@ var (
 	ErrOTPExpired    = errors.New("otp has expired")
 	ErrOTPInvalid    = errors.New("invalid otp code")
 	ErrOTPNotWaiting = errors.New("otp is not in waiting status")
+
+	ErrInvalidImageType = errors.New("invalid image type")
 )

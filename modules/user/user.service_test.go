@@ -29,6 +29,14 @@ func (m *mockUserRepo) DeleteProfile(userID uuid.UUID) error {
 	return m.DeleteProfileFn(userID)
 }
 
+func (m *mockUserRepo) GetProfilePicture(userID uuid.UUID) (string, error) {
+	return "", nil
+}
+
+func (m *mockUserRepo) UpdateProfilePicture(userID uuid.UUID, url string) error {
+	return nil
+}
+
 func TestGetProfileService(t *testing.T) {
 	targetID := uuid.New()
 	requesterID := uuid.New()

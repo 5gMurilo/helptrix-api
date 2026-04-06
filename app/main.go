@@ -12,6 +12,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -23,12 +24,16 @@ import (
 	"github.com/5gMurilo/helptrix-api/adapter/db/repository"
 	"github.com/5gMurilo/helptrix-api/adapter/email"
 	adapterhttp "github.com/5gMurilo/helptrix-api/adapter/http"
+	adapterstorage "github.com/5gMurilo/helptrix-api/adapter/storage"
 	"github.com/5gMurilo/helptrix-api/core/domain"
+	uploaderinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/uploader"
 	authmodule "github.com/5gMurilo/helptrix-api/modules/auth"
 	categorymodule "github.com/5gMurilo/helptrix-api/modules/category"
 	otpmodule "github.com/5gMurilo/helptrix-api/modules/otp"
 	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
 	servicemodule "github.com/5gMurilo/helptrix-api/modules/service"
+	uploadermodule "github.com/5gMurilo/helptrix-api/modules/uploader"
+	uploaderstrategies "github.com/5gMurilo/helptrix-api/modules/uploader/strategies"
 	usermodule "github.com/5gMurilo/helptrix-api/modules/user"
 )
 
@@ -85,7 +90,22 @@ func main() {
 	otpSvc := otpmodule.NewOtpService(otpRepo, emailSender)
 	otpCtrl := otpmodule.NewOtpController(otpSvc)
 
-	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl)
+	storageClient, err := adapterstorage.NewFirebaseStorageClient(context.Background())
+	if err != nil {
+		log.Fatalf("failed to create firebase storage client: %v", err)
+	}
+
+	bucketName := os.Getenv("FIREBASE_STORAGE_BUCKET")
+
+	strategies := map[string]uploaderinterfaces.IImageUploadStrategy{
+		"profile-images": uploaderstrategies.NewProfileImageStrategy(storageClient, userRepo, bucketName),
+		"service-images": uploaderstrategies.NewServiceImageStrategy(),
+	}
+
+	uploaderSvc := uploadermodule.NewUploaderService(strategies)
+	uploaderCtrl := uploadermodule.NewUploaderController(uploaderSvc)
+
+	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl, uploaderCtrl)
 
 	port := os.Getenv("PORT")
 	if port == "" {
