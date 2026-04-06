@@ -257,6 +257,7 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfil
 				Number:       dto.Address.Number,
 				Complement:   dto.Address.Complement,
 				Neighborhood: dto.Address.Neighborhood,
+				ZipCode:      dto.Address.ZipCode,
 				City:         dto.Address.City,
 				State:        dto.Address.State,
 			}
@@ -270,6 +271,7 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfil
 				"number":       dto.Address.Number,
 				"complement":   dto.Address.Complement,
 				"neighborhood": dto.Address.Neighborhood,
+				"zip_code":     dto.Address.ZipCode,
 				"city":         dto.Address.City,
 				"state":        dto.Address.State,
 			}
@@ -286,7 +288,18 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfil
 			tx.Rollback()
 			return fmt.Errorf("error removing old user categories: %w", err)
 		}
+
+		uniqueCategoryIDs := make([]uint, 0, len(dto.Categories))
+		seenCategoryIDs := make(map[uint]struct{}, len(dto.Categories))
 		for _, categoryID := range dto.Categories {
+			if _, alreadyAdded := seenCategoryIDs[categoryID]; alreadyAdded {
+				continue
+			}
+			seenCategoryIDs[categoryID] = struct{}{}
+			uniqueCategoryIDs = append(uniqueCategoryIDs, categoryID)
+		}
+
+		for _, categoryID := range uniqueCategoryIDs {
 			uc := domain.UserCategory{
 				UserID:     userID,
 				CategoryID: categoryID,

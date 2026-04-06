@@ -14,12 +14,15 @@ definitions:
         type: string
       street:
         type: string
+      zip_code:
+        type: string
     required:
     - city
     - neighborhood
     - number
     - state
     - street
+    - zip_code
     type: object
   domain.AddressUpdateDTO:
     properties:
@@ -34,6 +37,8 @@ definitions:
       state:
         type: string
       street:
+        type: string
+      zip_code:
         type: string
     type: object
   domain.CategoryListItemResponseDTO:

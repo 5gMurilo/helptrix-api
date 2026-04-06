@@ -1347,7 +1347,8 @@ const docTemplate = `{
                 "neighborhood",
                 "number",
                 "state",
-                "street"
+                "street",
+                "zip_code"
             ],
             "properties": {
                 "city": {
@@ -1366,6 +1367,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "street": {
+                    "type": "string"
+                },
+                "zip_code": {
                     "type": "string"
                 }
             }
@@ -1389,6 +1393,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "street": {
+                    "type": "string"
+                },
+                "zip_code": {
                     "type": "string"
                 }
             }

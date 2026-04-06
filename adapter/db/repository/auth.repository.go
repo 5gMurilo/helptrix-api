@@ -49,6 +49,7 @@ func (r *authRepository) Register(dto domain.RegisterRequestDTO, hashedPassword 
 		Number:       dto.Address.Number,
 		Complement:   dto.Address.Complement,
 		Neighborhood: dto.Address.Neighborhood,
+		ZipCode:      dto.Address.ZipCode,
 		City:         dto.Address.City,
 		State:        dto.Address.State,
 	}

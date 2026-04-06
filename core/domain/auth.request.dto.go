@@ -10,6 +10,7 @@ type AddressInputDTO struct {
 	Neighborhood string `json:"neighborhood" binding:"required"`
 	City         string `json:"city" binding:"required"`
 	State        string `json:"state" binding:"required,len=2"`
+	ZipCode      string `json:"zip_code" binding:"required"`
 }
 
 // LoginRequestDTO representa o payload para autenticacao de usuario.
