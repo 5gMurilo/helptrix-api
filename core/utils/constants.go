@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"regexp"
+	"time"
 )
 
 const (
@@ -17,6 +18,12 @@ const (
 	ProposalStatusInProgress = "in progress"
 	ProposalStatusCancelled  = "cancelled"
 	ProposalStatusFinished   = "finished"
+
+	OTPStatusWaiting   = "waiting"
+	OTPStatusConfirmed = "confirmed"
+	OTPStatusExpired   = "expired"
+
+	OTPExpirationDuration = 30 * time.Minute
 )
 
 var (
@@ -47,6 +54,11 @@ var (
 	ErrProposalInvalidStatus   = errors.New("invalid proposal status or transition")
 	ErrProposalUnauthorized    = errors.New("user is not authorized to perform this status change")
 	ErrNotProposalParticipant  = errors.New("user is not a participant of this proposal")
+
+	ErrOTPNotFound   = errors.New("otp not found")
+	ErrOTPExpired    = errors.New("otp has expired")
+	ErrOTPInvalid    = errors.New("invalid otp code")
+	ErrOTPNotWaiting = errors.New("otp is not in waiting status")
 
 	ErrInvalidImageType = errors.New("invalid image type")
 )

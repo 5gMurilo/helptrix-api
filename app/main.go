@@ -22,12 +22,14 @@ import (
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/adapter/db"
 	"github.com/5gMurilo/helptrix-api/adapter/db/repository"
+	"github.com/5gMurilo/helptrix-api/adapter/email"
 	adapterhttp "github.com/5gMurilo/helptrix-api/adapter/http"
 	adapterstorage "github.com/5gMurilo/helptrix-api/adapter/storage"
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	uploaderinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/uploader"
 	authmodule "github.com/5gMurilo/helptrix-api/modules/auth"
 	categorymodule "github.com/5gMurilo/helptrix-api/modules/category"
+	otpmodule "github.com/5gMurilo/helptrix-api/modules/otp"
 	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
 	servicemodule "github.com/5gMurilo/helptrix-api/modules/service"
 	uploadermodule "github.com/5gMurilo/helptrix-api/modules/uploader"
@@ -53,6 +55,7 @@ func main() {
 		&domain.UserCategory{},
 		&domain.Service{},
 		&domain.Proposal{},
+		&domain.OTP{},
 	); err != nil {
 		log.Fatalf("failed to run database migrations: %v", err)
 	}
@@ -82,6 +85,11 @@ func main() {
 	proposalSvc := proposalmodule.NewProposalService(proposalRepo)
 	proposalCtrl := proposalmodule.NewProposalController(proposalSvc)
 
+	emailSender := email.NewResendEmailSender()
+	otpRepo := repository.NewOtpRepository(gormDB)
+	otpSvc := otpmodule.NewOtpService(otpRepo, emailSender)
+	otpCtrl := otpmodule.NewOtpController(otpSvc)
+
 	storageClient, err := adapterstorage.NewFirebaseStorageClient(context.Background())
 	if err != nil {
 		log.Fatalf("failed to create firebase storage client: %v", err)
@@ -97,7 +105,7 @@ func main() {
 	uploaderSvc := uploadermodule.NewUploaderService(strategies)
 	uploaderCtrl := uploadermodule.NewUploaderController(uploaderSvc)
 
-	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, uploaderCtrl)
+	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl, uploaderCtrl)
 
 	port := os.Getenv("PORT")
 	if port == "" {

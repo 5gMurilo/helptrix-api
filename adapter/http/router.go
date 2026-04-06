@@ -7,6 +7,7 @@ import (
 	"github.com/5gMurilo/helptrix-api/adapter/http/middleware"
 	authifaces "github.com/5gMurilo/helptrix-api/core/interfaces/auth"
 	categoryinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/category"
+	otpinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/otp"
 	proposalinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/proposal"
 	serviceinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/service"
 	uploaderinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/uploader"
@@ -23,6 +24,7 @@ func NewRouter(
 	categoryCtrl categoryinterfaces.ICategoryController,
 	svcCtrl serviceinterfaces.IServiceController,
 	proposalCtrl proposalinterfaces.IProposalController,
+	otpCtrl otpinterfaces.IOtpController,
 	uploaderCtrl uploaderinterfaces.IUploaderController,
 ) *gin.Engine {
 	router := gin.Default()
@@ -40,6 +42,12 @@ func NewRouter(
 	{
 		authGroup.POST("/register", authCtrl.Register)
 		authGroup.POST("/login", authCtrl.Login)
+	}
+
+	otpGroup := router.Group("/otp")
+	{
+		otpGroup.POST("/send", otpCtrl.Send)
+		otpGroup.POST("/confirm", otpCtrl.Confirm)
 	}
 
 	router.GET("/category", categoryCtrl.List)

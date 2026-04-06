@@ -49,6 +49,21 @@ definitions:
       updated_at:
         type: string
     type: object
+  domain.ConfirmOTPRequestDTO:
+    properties:
+      code:
+        type: string
+      id:
+        type: string
+    required:
+    - code
+    - id
+    type: object
+  domain.ConfirmOTPResponseDTO:
+    properties:
+      message:
+        type: string
+    type: object
   domain.CreateProposalRequestDTO:
     properties:
       category_id:
@@ -144,6 +159,8 @@ definitions:
     type: object
   domain.LoginResponseDTO:
     properties:
+      id:
+        type: string
       token:
         type: string
     type: object
@@ -239,6 +256,20 @@ definitions:
       name:
         type: string
       user_type:
+        type: string
+    type: object
+  domain.SendOTPRequestDTO:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  domain.SendOTPResponseDTO:
+    properties:
+      id:
+        type: string
+      message:
         type: string
     type: object
   domain.ServiceCategoryDTO:
@@ -498,6 +529,87 @@ paths:
       summary: Upload an image
       tags:
       - image-uploader
+  /otp/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Validates the submitted 4-digit OTP code and marks it as confirmed
+      parameters:
+      - description: Confirm OTP request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfirmOTPRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ConfirmOTPResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Confirm OTP
+      tags:
+      - otp
+  /otp/send:
+    post:
+      consumes:
+      - application/json
+      description: Generates a 4-digit OTP, invalidates any existing waiting OTP for
+        the email, and delivers it by email
+      parameters:
+      - description: Send OTP request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.SendOTPRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.SendOTPResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Send OTP
+      tags:
+      - otp
   /proposal:
     get:
       consumes:

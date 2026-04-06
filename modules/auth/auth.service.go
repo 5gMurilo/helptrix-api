@@ -86,5 +86,5 @@ func (s *AuthService) Login(dto domain.LoginRequestDTO) (domain.LoginResponseDTO
 		return domain.LoginResponseDTO{}, utils.ErrInvalidCredentials
 	}
 
-	return domain.LoginResponseDTO{Token: token}, nil
+	return domain.LoginResponseDTO{ID: user.ID, Token: token}, nil
 }
