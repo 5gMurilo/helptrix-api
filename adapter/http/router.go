@@ -9,6 +9,7 @@ import (
 	categoryinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/category"
 	proposalinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/proposal"
 	serviceinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/service"
+	uploaderinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/uploader"
 	userinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/user"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -22,6 +23,7 @@ func NewRouter(
 	categoryCtrl categoryinterfaces.ICategoryController,
 	svcCtrl serviceinterfaces.IServiceController,
 	proposalCtrl proposalinterfaces.IProposalController,
+	uploaderCtrl uploaderinterfaces.IUploaderController,
 ) *gin.Engine {
 	router := gin.Default()
 
@@ -68,6 +70,8 @@ func NewRouter(
 			proposalGroup.GET("/:id", proposalCtrl.GetByID)
 			proposalGroup.PATCH("/:id/status", proposalCtrl.UpdateStatus)
 		}
+
+		protected.POST("/image-uploader/:image-type/:id", uploaderCtrl.Upload)
 	}
 
 	return router
