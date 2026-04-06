@@ -1341,7 +1341,8 @@
                 "neighborhood",
                 "number",
                 "state",
-                "street"
+                "street",
+                "zip_code"
             ],
             "properties": {
                 "city": {
@@ -1360,6 +1361,9 @@
                     "type": "string"
                 },
                 "street": {
+                    "type": "string"
+                },
+                "zip_code": {
                     "type": "string"
                 }
             }
@@ -1383,6 +1387,9 @@
                     "type": "string"
                 },
                 "street": {
+                    "type": "string"
+                },
+                "zip_code": {
                     "type": "string"
                 }
             }
