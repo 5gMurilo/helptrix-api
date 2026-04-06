@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	userinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/user"
 	"github.com/5gMurilo/helptrix-api/core/utils"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type userRepository struct {
@@ -282,13 +284,8 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfil
 		}
 	}
 
-	// Step 5: replace user categories if provided
+	// Step 5: sync user categories if provided (soft-delete removed + batch upsert)
 	if len(dto.Categories) > 0 {
-		if err := tx.Where("user_id = ?", userID).Delete(&domain.UserCategory{}).Error; err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error removing old user categories: %w", err)
-		}
-
 		uniqueCategoryIDs := make([]uint, 0, len(dto.Categories))
 		seenCategoryIDs := make(map[uint]struct{}, len(dto.Categories))
 		for _, categoryID := range dto.Categories {
@@ -299,15 +296,31 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, dto domain.UpdateProfil
 			uniqueCategoryIDs = append(uniqueCategoryIDs, categoryID)
 		}
 
+		rm := tx.Where("user_id = ?", userID).Where("category_id NOT IN ?", uniqueCategoryIDs)
+		if err := rm.Delete(&domain.UserCategory{}).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error soft-deleting removed user categories: %w", err)
+		}
+
+		now := time.Now()
+		rows := make([]domain.UserCategory, 0, len(uniqueCategoryIDs))
 		for _, categoryID := range uniqueCategoryIDs {
-			uc := domain.UserCategory{
+			rows = append(rows, domain.UserCategory{
 				UserID:     userID,
 				CategoryID: categoryID,
-			}
-			if err := tx.Create(&uc).Error; err != nil {
-				tx.Rollback()
-				return fmt.Errorf("error inserting new user category: %w", err)
-			}
+				CreatedAt:  now,
+				UpdatedAt:  now,
+			})
+		}
+		if err := tx.Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "user_id"}, {Name: "category_id"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"deleted_at": gorm.Expr("NULL"),
+				"updated_at": gorm.Expr("NOW()"),
+			}),
+		}).Create(&rows).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error upserting user categories: %w", err)
 		}
 	}
 
