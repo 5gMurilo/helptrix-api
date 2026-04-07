@@ -566,7 +566,7 @@ paths:
         name: image-type
         required: true
         type: string
-      - description: Owner ID
+      - description: User ID (profile-images) or service ID (service-images)
         in: path
         name: id
         required: true
@@ -611,12 +611,6 @@ paths:
             type: object
         "500":
           description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "501":
-          description: Not Implemented
           schema:
             additionalProperties:
               type: string

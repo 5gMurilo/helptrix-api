@@ -44,7 +44,7 @@ func containsString(slice []string, val string) bool {
 //	@Produce		json
 //	@Security		BearerAuth
 //	@Param			image-type	path		string	true	"Image type (profile-images | service-images)"
-//	@Param			id			path		string	true	"Owner ID"
+//	@Param			id			path		string	true	"User ID (profile-images) or service ID (service-images)"
 //	@Param			image		formData	file	true	"Image file"
 //	@Success		200			{object}	map[string]string
 //	@Failure		400			{object}	map[string]string
@@ -52,7 +52,6 @@ func containsString(slice []string, val string) bool {
 //	@Failure		403			{object}	map[string]string
 //	@Failure		404			{object}	map[string]string
 //	@Failure		500			{object}	map[string]string
-//	@Failure		501			{object}	map[string]string
 //	@Router			/image-uploader/{image-type}/{id} [post]
 func (ctrl *UploaderController) Upload(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
@@ -117,10 +116,6 @@ func (ctrl *UploaderController) Upload(c *gin.Context) {
 		}
 		if errors.Is(err, utils.ErrInvalidImageType) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if err.Error() == "not implemented" {
-			c.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})

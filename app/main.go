@@ -100,7 +100,7 @@ func main() {
 
 	strategies := map[string]uploaderinterfaces.IImageUploadStrategy{
 		"profile-images": uploaderstrategies.NewProfileImageStrategy(storageClient, userRepo, bucketName),
-		"service-images": uploaderstrategies.NewServiceImageStrategy(),
+		"service-images": uploaderstrategies.NewServiceImageStrategy(storageClient, svcRepo, bucketName),
 	}
 
 	uploaderSvc := uploadermodule.NewUploaderService(strategies)

@@ -269,7 +269,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Owner ID",
+                        "description": "User ID (profile-images) or service ID (service-images)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -330,15 +330,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "501": {
-                        "description": "Not Implemented",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
