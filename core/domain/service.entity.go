@@ -17,8 +17,8 @@ type Service struct {
 	Description   string          `gorm:"type:text;not null" json:"description"`
 	ActuationDays datatypes.JSON  `gorm:"type:jsonb;not null" json:"actuation_days"`
 	Value         decimal.Decimal `gorm:"type:decimal(10,2);not null" json:"value"`
-	StartTime     string          `gorm:"type:varchar(5);not null" json:"start_time"` // HH:MM
-	EndTime       string          `gorm:"type:varchar(5);not null" json:"end_time"`   // HH:MM
+	StartTime     string          `gorm:"type:varchar(8);not null" json:"start_time"` // HH:MM
+	EndTime       string          `gorm:"type:varchar(8);not null" json:"end_time"`   // HH:MM
 	OfferSince    time.Time       `gorm:"not null" json:"offer_since"`
 	Photos        datatypes.JSON  `gorm:"type:jsonb" json:"photos,omitempty"`
 	CreatedAt     time.Time       `json:"created_at"`
