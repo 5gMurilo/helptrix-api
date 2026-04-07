@@ -5,7 +5,7 @@
 #──────────────────────────────────────────────────────────────
 FROM golang:1.25-alpine AS builder
 
-WORKDIR /app
+WORKDIR /api
 
 # Copy dependency manifests first for optimal layer caching
 COPY go.mod go.sum ./
@@ -17,18 +17,18 @@ RUN go mod download
 COPY . .
 
 # Compile the binary
-RUN go build -o helptrix-api ./app/...
+RUN mkdir -p ./tmp && go build -o ./tmp/main ./app/...
 
 #──────────────────────────────────────────────────────────────
 # Stage 2: Runtime
 #──────────────────────────────────────────────────────────────
 FROM alpine:3.19
 
-WORKDIR /app
+WORKDIR /api
 
 # Copy only the compiled binary from the builder stage
-COPY --from=builder /app/helptrix-api .
+COPY --from=builder /api/tmp/main ./tmp/main
 
-EXPOSE 8080
+EXPOSE 10000
 
-CMD ["./helptrix-api"]
+CMD ["./tmp/main"]

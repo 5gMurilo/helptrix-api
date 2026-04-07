@@ -22,7 +22,6 @@ vendor/
 .dr_ai/
 
 # Documentation
-docs/
 *.md
 
 # Docker files (exclude from build context)
