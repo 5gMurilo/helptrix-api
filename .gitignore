@@ -2,6 +2,7 @@
 .claude/
 .dr_ai/
 .cursor/
+.omx/
 docs/app-specs/
 
 # Go

@@ -35,6 +35,7 @@ import (
 	uploadermodule "github.com/5gMurilo/helptrix-api/modules/uploader"
 	uploaderstrategies "github.com/5gMurilo/helptrix-api/modules/uploader/strategies"
 	helpermodule "github.com/5gMurilo/helptrix-api/modules/helper"
+	reviewmodule "github.com/5gMurilo/helptrix-api/modules/review"
 	usermodule "github.com/5gMurilo/helptrix-api/modules/user"
 )
 
@@ -57,6 +58,7 @@ func main() {
 		&domain.Service{},
 		&domain.Proposal{},
 		&domain.OTP{},
+		&domain.Review{},
 	); err != nil {
 		log.Fatalf("failed to run database migrations: %v", err)
 	}
@@ -110,7 +112,11 @@ func main() {
 	helperSvc := helpermodule.NewHelperService(helperRepo)
 	helperCtrl := helpermodule.NewHelperController(helperSvc)
 
-	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl, uploaderCtrl, helperCtrl)
+	reviewRepo := repository.NewReviewRepository(gormDB)
+	reviewSvc := reviewmodule.NewReviewService(reviewRepo)
+	reviewCtrl := reviewmodule.NewReviewController(reviewSvc)
+
+	router := adapterhttp.NewRouter(maker, authCtrl, userCtrl, categoryCtrl, svcCtrl, proposalCtrl, otpCtrl, uploaderCtrl, helperCtrl, reviewCtrl)
 
 	port := os.Getenv("PORT")
 	if port == "" {

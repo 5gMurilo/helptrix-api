@@ -62,4 +62,8 @@ var (
 	ErrOTPNotWaiting = errors.New("otp is not in waiting status")
 
 	ErrInvalidImageType = errors.New("invalid image type")
+
+	ErrReviewAlreadyExists = errors.New("business has already reviewed this helper")
+	ErrProposalNotFinished = errors.New("proposal must be finished before creating review")
+	ErrCannotReviewSelf    = errors.New("user cannot review themselves")
 )

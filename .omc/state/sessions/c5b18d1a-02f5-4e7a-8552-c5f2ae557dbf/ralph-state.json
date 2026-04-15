@@ -1,0 +1,12 @@
+{
+  "active": true,
+  "iteration": 1,
+  "max_iterations": 100,
+  "started_at": "2026-04-14T00:55:05.167Z",
+  "prompt": "/oh-my-claudecode:ralph \"execute review-feature-plan\"",
+  "session_id": "c5b18d1a-02f5-4e7a-8552-c5f2ae557dbf",
+  "project_path": "/Users/digitalrepublic/Documents/projetos-pessoais/helptrix-api",
+  "linked_ultrawork": true,
+  "awaiting_confirmation": true,
+  "last_checked_at": "2026-04-14T00:55:05.168Z"
+}

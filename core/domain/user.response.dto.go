@@ -64,7 +64,7 @@ type GetProfileResponseDTO struct {
 	UserType       string               `json:"user_type"`
 	Categories     []ProfileCategoryDTO `json:"categories"`
 	Address        *ProfileAddressDTO   `json:"address,omitempty"`
-	Reviews        []interface{}        `json:"reviews"`
+	Reviews        []ReviewListResponseDTO `json:"reviews"`
 	Services       []ServiceResponseDTO `json:"services,omitempty"`
 	CreatedAt      time.Time            `json:"created_at"`
 }

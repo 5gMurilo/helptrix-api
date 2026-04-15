@@ -1,0 +1,123 @@
+{
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Database Migration for Reviews Table",
+      "description": "Create SQL migration files for reviews table with proper indexes and constraints",
+      "priority": 1,
+      "passes": false,
+      "acceptanceCriteria": [
+        "Migration file 0042_create_reviews_table.up.sql exists at adapter/db/migration/",
+        "Migration file 0042_create_reviews_table.down.sql exists at adapter/db/migration/",
+        "Table has columns: id (UUID), business_id (UUID), helper_id (UUID), category_id (uint), rate (int), review (text), service_type (varchar), timestamps, deleted_at",
+        "Table has indexes: idx_reviews_business_id, idx_reviews_helper_id, idx_reviews_deleted_at",
+        "Table has unique index idx_reviews_unique_active on (business_id, helper_id) WHERE deleted_at IS NULL"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "Review Domain Entity and DTOs",
+      "description": "Create Review entity and request/response DTOs following existing patterns",
+      "priority": 2,
+      "passes": false,
+      "acceptanceCriteria": [
+        "core/domain/review.entity.go exists with Review struct",
+        "Review entity has fields: ID, BusinessID, HelperID, CategoryID, Rate, Review, ServiceType, CreatedAt, DeletedAt",
+        "core/domain/review.request.dto.go exists with CreateReviewRequestDTO",
+        "core/domain/review.response.dto.go exists with ReviewListResponseDTO",
+        "CreateReviewRequestDTO has HelperID, Rate, Review, ServiceType fields",
+        "ReviewListResponseDTO has Rate, Review, ServiceType, CreatedAt fields"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Review Interfaces Layer",
+      "description": "Create repository, service, and controller interfaces for review module",
+      "priority": 3,
+      "passes": false,
+      "acceptanceCriteria": [
+        "core/interfaces/review/IReviewRepository.go exists",
+        "core/interfaces/review/IReviewService.go exists",
+        "core/interfaces/review/IReviewController.go exists",
+        "IReviewRepository has methods: Create, ListByBusiness, ListByHelper, GetByBusinessAndHelper",
+        "IReviewService has methods: CreateReview, ListBusinessReviews, ListHelperReviews",
+        "IReviewController has methods: Create, ListBusiness, ListHelper"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Review Repository Implementation",
+      "description": "Implement review repository with GORM following existing patterns",
+      "priority": 4,
+      "passes": false,
+      "acceptanceCriteria": [
+        "adapter/db/repository/review.repository.go exists",
+        "Repository implements IReviewRepository interface",
+        "Create method uses transaction and handles soft deletes",
+        "ListByBusiness returns reviews filtered by business_id",
+        "ListByHelper returns reviews filtered by helper_id",
+        "GetByBusinessAndHelper checks for existing review"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Review Service and Controller",
+      "description": "Implement review service with business logic and controller with Swagger docs",
+      "priority": 5,
+      "passes": false,
+      "acceptanceCriteria": [
+        "modules/review/review.service.go exists",
+        "modules/review/review.controller.go exists",
+        "Service validates proposal is finished before creating review",
+        "Service prevents duplicate reviews",
+        "Service validates business user cannot review themselves",
+        "Controller has Swagger annotations for all endpoints",
+        "Controller maps errors to correct HTTP status codes"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Review Module Tests",
+      "description": "Create unit tests for review service and controller with 60%+ coverage",
+      "priority": 6,
+      "passes": false,
+      "acceptanceCriteria": [
+        "modules/review/review.service_test.go exists",
+        "modules/review/review.controller_test.go exists",
+        "Tests cover successful review creation",
+        "Tests cover proposal not finished error case",
+        "Tests cover duplicate review error case",
+        "Tests cover non-business user error case",
+        "Test coverage is >= 60% for review module"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Router and Dependency Injection",
+      "description": "Integrate review module into router and main.go dependency injection",
+      "priority": 7,
+      "passes": false,
+      "acceptanceCriteria": [
+        "adapter/http/router.go updated with review controller dependency",
+        "adapter/http/router.go has /review route group with POST, GET /business, GET /helper",
+        "app/main.go has review repository, service, controller initialization",
+        "app/main.go injects review controller into router",
+        "core/utils/constants.go has review-specific errors"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "User Profile Integration and Swagger",
+      "description": "Update user response DTO and generate Swagger documentation",
+      "priority": 8,
+      "passes": false,
+      "acceptanceCriteria": [
+        "core/domain/user.response.dto.go updated with Reviews field type changed to []ReviewListResponseDTO",
+        "GET /user/profile/:id returns reviews in response for helper users",
+        "Swagger documentation generated at /swagger",
+        "All review endpoints visible in Swagger UI",
+        "swag init -g app/main.go runs without errors"
+      ]
+    }
+  ]
+}

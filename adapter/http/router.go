@@ -10,6 +10,7 @@ import (
 	otpinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/otp"
 	helperinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/helper"
 	proposalinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/proposal"
+	reviewinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/review"
 	serviceinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/service"
 	uploaderinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/uploader"
 	userinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/user"
@@ -28,6 +29,7 @@ func NewRouter(
 	otpCtrl otpinterfaces.IOtpController,
 	uploaderCtrl uploaderinterfaces.IUploaderController,
 	helperCtrl helperinterfaces.IHelperController,
+	reviewCtrl reviewinterfaces.IReviewController,
 ) *gin.Engine {
 	router := gin.Default()
 
@@ -84,6 +86,13 @@ func NewRouter(
 		protected.POST("/image-uploader/:image-type/:id", uploaderCtrl.Upload)
 
 		protected.GET("/helper", helperCtrl.List)
+
+		reviewGroup := protected.Group("/review")
+		{
+			reviewGroup.POST("", reviewCtrl.Create)
+			reviewGroup.GET("/business", reviewCtrl.ListBusiness)
+			reviewGroup.GET("/helper", reviewCtrl.ListHelper)
+		}
 	}
 
 	return router
