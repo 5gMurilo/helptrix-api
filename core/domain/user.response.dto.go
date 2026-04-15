@@ -55,18 +55,18 @@ type ProfileServiceDTO struct {
 //
 //	@name	GetProfileResponseDTO
 type GetProfileResponseDTO struct {
-	ID             uuid.UUID            `json:"id"`
-	Name           string               `json:"name"`
-	Email          string               `json:"email"`
-	Phone          string               `json:"phone"`
-	Biography      string               `json:"biography,omitempty"`
-	ProfilePicture string               `json:"profile_picture,omitempty"`
-	UserType       string               `json:"user_type"`
-	Categories     []ProfileCategoryDTO `json:"categories"`
-	Address        *ProfileAddressDTO   `json:"address,omitempty"`
+	ID             uuid.UUID               `json:"id"`
+	Name           string                  `json:"name"`
+	Email          string                  `json:"email"`
+	Phone          string                  `json:"phone"`
+	Biography      string                  `json:"biography,omitempty"`
+	ProfilePicture string                  `json:"profile_picture,omitempty"`
+	UserType       string                  `json:"user_type"`
+	Categories     []ProfileCategoryDTO    `json:"categories"`
+	Address        *ProfileAddressDTO      `json:"address,omitempty"`
 	Reviews        []ReviewListResponseDTO `json:"reviews"`
-	Services       []ServiceResponseDTO `json:"services,omitempty"`
-	CreatedAt      time.Time            `json:"created_at"`
+	Services       []ServiceResponseDTO    `json:"services,omitempty"`
+	CreatedAt      time.Time               `json:"created_at"`
 }
 
 // UpdateProfileResponseDTO is an empty struct used only for Swagger documentation of PUT /user/profile/:id.

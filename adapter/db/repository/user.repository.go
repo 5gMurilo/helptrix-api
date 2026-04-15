@@ -129,7 +129,7 @@ func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilt
 		UserType:       user.UserType,
 		Categories:     categories,
 		Address:        address,
-		Reviews:        []interface{}{},
+		Reviews:        []domain.ReviewListResponseDTO{},
 		Services:       services,
 		CreatedAt:      user.CreatedAt,
 	}

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/5gMurilo/helptrix-api/core/domain"
-	usermodule "github.com/5gMurilo/helptrix-api/modules/user"
 	"github.com/5gMurilo/helptrix-api/core/utils"
+	usermodule "github.com/5gMurilo/helptrix-api/modules/user"
 	"github.com/google/uuid"
 )
 
@@ -55,7 +55,7 @@ func TestGetProfileService(t *testing.T) {
 			GetProfileFn: func(userID uuid.UUID, f domain.ProfileFilters) (domain.GetProfileResponseDTO, error) {
 				capturedID = userID
 				capturedFilters = f
-				return domain.GetProfileResponseDTO{ID: targetID, Reviews: []interface{}{}}, nil
+				return domain.GetProfileResponseDTO{ID: targetID, Reviews: []domain.ReviewListResponseDTO{}}, nil
 			},
 		}
 
@@ -91,7 +91,7 @@ func TestGetProfileService(t *testing.T) {
 		repo := &mockUserRepo{
 			GetProfileFn: func(userID uuid.UUID, f domain.ProfileFilters) (domain.GetProfileResponseDTO, error) {
 				capturedFilters = f
-				return domain.GetProfileResponseDTO{ID: targetID, Reviews: []interface{}{}}, nil
+				return domain.GetProfileResponseDTO{ID: targetID, Reviews: []domain.ReviewListResponseDTO{}}, nil
 			},
 		}
 
