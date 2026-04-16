@@ -180,7 +180,7 @@ func TestProposalController_Create_409AlreadyActive(t *testing.T) {
 	helperID := uuid.New()
 	svc := defaultMockService(userID, helperID)
 	svc.CreateFn = func(dto domain.CreateProposalRequestDTO, uid uuid.UUID) (domain.ProposalResponseDTO, error) {
-		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyActive
+		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyActiveForHelper
 	}
 
 	router := setupProposalRouter(svc, userID.String(), utils.UserTypeBusiness)

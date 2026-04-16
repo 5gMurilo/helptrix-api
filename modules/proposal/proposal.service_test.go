@@ -14,12 +14,12 @@ import (
 
 // mockProposalRepository implements IProposalRepository for unit tests.
 type mockProposalRepository struct {
-	CreateFn             func(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.Proposal, error)
-	FindByIDFn           func(id uuid.UUID) (*domain.Proposal, error)
-	UpdateStatusFn       func(id uuid.UUID, status string) (*domain.Proposal, error)
-	ListByUserIDFn       func(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
-	ListByHelperIDFn     func(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
-	HasActiveProposalFn  func(userID uuid.UUID) (bool, error)
+	CreateFn                      func(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.Proposal, error)
+	FindByIDFn                    func(id uuid.UUID) (*domain.Proposal, error)
+	UpdateStatusFn                func(id uuid.UUID, status string) (*domain.Proposal, error)
+	ListByUserIDFn                func(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
+	ListByHelperIDFn              func(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
+	HasBlockingProposalForHelperFn func(userID uuid.UUID, helperID uuid.UUID) (bool, error)
 }
 
 func (m *mockProposalRepository) Create(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.Proposal, error) {
@@ -42,8 +42,8 @@ func (m *mockProposalRepository) ListByHelperID(helperID uuid.UUID, statusFilter
 	return m.ListByHelperIDFn(helperID, statusFilter)
 }
 
-func (m *mockProposalRepository) HasActiveProposal(userID uuid.UUID) (bool, error) {
-	return m.HasActiveProposalFn(userID)
+func (m *mockProposalRepository) HasBlockingProposalForHelper(userID uuid.UUID, helperID uuid.UUID) (bool, error) {
+	return m.HasBlockingProposalForHelperFn(userID, helperID)
 }
 
 var _ proposalinterfaces.IProposalRepository = (*mockProposalRepository)(nil)
@@ -67,7 +67,7 @@ func newProposal(userID, helperID uuid.UUID, status string) domain.Proposal {
 func defaultRepo(userID, helperID uuid.UUID) *mockProposalRepository {
 	proposal := newProposal(userID, helperID, utils.ProposalStatusPending)
 	return &mockProposalRepository{
-		HasActiveProposalFn: func(uid uuid.UUID) (bool, error) {
+		HasBlockingProposalForHelperFn: func(uid uuid.UUID, hid uuid.UUID) (bool, error) {
 			return false, nil
 		},
 		CreateFn: func(dto domain.CreateProposalRequestDTO, uid uuid.UUID) (domain.Proposal, error) {
@@ -120,28 +120,28 @@ func TestProposalService_Create_Success(t *testing.T) {
 	}
 }
 
-func TestProposalService_Create_AlreadyActive(t *testing.T) {
+func TestProposalService_Create_BlockedSameHelper(t *testing.T) {
 	userID := uuid.New()
 	helperID := uuid.New()
 	repo := defaultRepo(userID, helperID)
-	repo.HasActiveProposalFn = func(uid uuid.UUID) (bool, error) {
+	repo.HasBlockingProposalForHelperFn = func(uid uuid.UUID, hid uuid.UUID) (bool, error) {
 		return true, nil
 	}
 	svc := proposalmodule.NewProposalService(repo)
 
 	_, err := svc.Create(validCreateDTO(helperID), userID)
 
-	if !errors.Is(err, utils.ErrProposalAlreadyActive) {
-		t.Errorf("esperado ErrProposalAlreadyActive, obteve: %v", err)
+	if !errors.Is(err, utils.ErrProposalAlreadyActiveForHelper) {
+		t.Errorf("esperado ErrProposalAlreadyActiveForHelper, obteve: %v", err)
 	}
 }
 
-func TestProposalService_Create_HasActiveProposalError(t *testing.T) {
+func TestProposalService_Create_HasBlockingProposalError(t *testing.T) {
 	userID := uuid.New()
 	helperID := uuid.New()
 	repo := defaultRepo(userID, helperID)
-	repoErr := errors.New("db error checking active proposal")
-	repo.HasActiveProposalFn = func(uid uuid.UUID) (bool, error) {
+	repoErr := errors.New("db error checking proposal for helper")
+	repo.HasBlockingProposalForHelperFn = func(uid uuid.UUID, hid uuid.UUID) (bool, error) {
 		return false, repoErr
 	}
 	svc := proposalmodule.NewProposalService(repo)
@@ -150,6 +150,51 @@ func TestProposalService_Create_HasActiveProposalError(t *testing.T) {
 
 	if !errors.Is(err, repoErr) {
 		t.Errorf("esperado erro do repo propagado, obteve: %v", err)
+	}
+}
+
+func TestProposalService_Create_AllowedWhenPreviousIsAccepted(t *testing.T) {
+	userID := uuid.New()
+	helperID := uuid.New()
+	repo := defaultRepo(userID, helperID)
+
+	var capturedHelperID uuid.UUID
+	repo.HasBlockingProposalForHelperFn = func(uid uuid.UUID, hid uuid.UUID) (bool, error) {
+		capturedHelperID = hid
+		return false, nil
+	}
+	svc := proposalmodule.NewProposalService(repo)
+
+	resp, err := svc.Create(validCreateDTO(helperID), userID)
+
+	if err != nil {
+		t.Fatalf("esperado sem erro quando proposta anterior esta accepted, obteve: %v", err)
+	}
+	if capturedHelperID != helperID {
+		t.Errorf("esperado helperID %v passado ao repo, obteve %v", helperID, capturedHelperID)
+	}
+	if resp.Status != utils.ProposalStatusPending {
+		t.Errorf("esperado status '%s', obteve '%s'", utils.ProposalStatusPending, resp.Status)
+	}
+}
+
+func TestProposalService_Create_AllowedForDifferentHelper(t *testing.T) {
+	userID := uuid.New()
+	helperID := uuid.New()
+	otherHelperID := uuid.New()
+	repo := defaultRepo(userID, helperID)
+	repo.HasBlockingProposalForHelperFn = func(uid uuid.UUID, hid uuid.UUID) (bool, error) {
+		return hid == helperID, nil
+	}
+	svc := proposalmodule.NewProposalService(repo)
+
+	resp, err := svc.Create(validCreateDTO(otherHelperID), userID)
+
+	if err != nil {
+		t.Fatalf("esperado sem erro para helper diferente, obteve: %v", err)
+	}
+	if resp.UserID != userID {
+		t.Errorf("esperado UserID %v, obteve %v", userID, resp.UserID)
 	}
 }
 

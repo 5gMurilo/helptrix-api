@@ -11,5 +11,5 @@ type IProposalRepository interface {
 	UpdateStatus(id uuid.UUID, status string) (*domain.Proposal, error)
 	ListByUserID(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
 	ListByHelperID(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
-	HasActiveProposal(userID uuid.UUID) (bool, error)
+	HasBlockingProposalForHelper(userID uuid.UUID, helperID uuid.UUID) (bool, error)
 }

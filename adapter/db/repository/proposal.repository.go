@@ -66,19 +66,13 @@ func (r *proposalRepository) UpdateStatus(id uuid.UUID, status string) (*domain.
 	return &proposal, nil
 }
 
-func (r *proposalRepository) HasActiveProposal(userID uuid.UUID) (bool, error) {
+func (r *proposalRepository) HasBlockingProposalForHelper(userID, helperID uuid.UUID) (bool, error) {
 	var count int64
 
-	terminalStatuses := []string{
-		utils.ProposalStatusRefused,
-		utils.ProposalStatusCancelled,
-		utils.ProposalStatusFinished,
-	}
-
 	if err := r.db.Model(&domain.Proposal{}).
-		Where("user_id = ? AND status NOT IN ?", userID, terminalStatuses).
+		Where("user_id = ? AND helper_id = ? AND status != ?", userID, helperID, utils.ProposalStatusAccepted).
 		Count(&count).Error; err != nil {
-		return false, fmt.Errorf("error checking active proposal: %w", err)
+		return false, fmt.Errorf("error checking proposal for helper: %w", err)
 	}
 
 	return count > 0, nil

@@ -3,6 +3,7 @@
 .dr_ai/
 .cursor/
 .omx/
+.omc/
 docs/app-specs/
 
 # Go

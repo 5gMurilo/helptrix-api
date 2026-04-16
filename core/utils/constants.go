@@ -49,7 +49,7 @@ var (
 	ErrServiceNotFound = errors.New("service not found")
 
 	ErrProposalNotFound        = errors.New("proposal not found")
-	ErrProposalAlreadyActive   = errors.New("user already has an active proposal")
+	ErrProposalAlreadyActiveForHelper = errors.New("user already has an active proposal for this helper")
 	ErrProposalFinished        = errors.New("proposal is already in a terminal status")
 	ErrProposalCannotBeRefused = errors.New("proposal cannot be refused in its current status")
 	ErrProposalInvalidStatus   = errors.New("invalid proposal status or transition")

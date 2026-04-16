@@ -16,12 +16,12 @@ func NewProposalService(repo proposalinterfaces.IProposalRepository) proposalint
 }
 
 func (s *ProposalService) Create(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.ProposalResponseDTO, error) {
-	hasActive, err := s.repo.HasActiveProposal(userID)
+	hasBlocking, err := s.repo.HasBlockingProposalForHelper(userID, dto.HelperID)
 	if err != nil {
 		return domain.ProposalResponseDTO{}, err
 	}
-	if hasActive {
-		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyActive
+	if hasBlocking {
+		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyActiveForHelper
 	}
 
 	proposal, err := s.repo.Create(dto, userID)
