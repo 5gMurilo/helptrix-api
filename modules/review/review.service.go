@@ -16,6 +16,11 @@ func NewReviewService(repo reviewinterfaces.IReviewRepository) reviewinterfaces.
 }
 
 func (s *ReviewService) CreateReview(businessID uuid.UUID, dto domain.CreateReviewRequestDTO) error {
+	proposalID, err := uuid.Parse(dto.ProposalID)
+	if err != nil {
+		return err
+	}
+
 	helperID, err := uuid.Parse(dto.HelperID)
 	if err != nil {
 		return err
@@ -26,6 +31,7 @@ func (s *ReviewService) CreateReview(businessID uuid.UUID, dto domain.CreateRevi
 	}
 
 	review := &domain.Review{
+		ProposalID:  proposalID,
 		BusinessID:  businessID,
 		HelperID:    helperID,
 		Rate:        dto.Rate,

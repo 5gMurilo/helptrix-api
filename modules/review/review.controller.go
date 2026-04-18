@@ -60,19 +60,21 @@ func (ctrl *ReviewController) Create(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
-		if err.Error() == "no finished proposal found for this business and helper" {
-			c.JSON(http.StatusForbidden, gin.H{"error": utils.ErrProposalNotFinished.Error()})
+		if errors.Is(err, utils.ErrProposalNotFound) ||
+			errors.Is(err, utils.ErrReviewProposalMismatch) ||
+			errors.Is(err, utils.ErrProposalNotFinished) {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
-		if err.Error() == "business has already reviewed this helper" {
-			c.JSON(http.StatusConflict, gin.H{"error": utils.ErrReviewAlreadyExists.Error()})
+		if errors.Is(err, utils.ErrReviewAlreadyExists) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, gin.H{"status": "created"})
 }
 
 // ListBusinessReviews godoc

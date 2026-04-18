@@ -32,12 +32,12 @@ func (m *mockAuthService) Login(dto domain.LoginRequestDTO) (domain.LoginRespons
 
 func validRegisterBody() []byte {
 	body := map[string]interface{}{
-		"name":      "João da Silva",
-		"email":     "joao@example.com",
-		"password":  "senha123",
-		"user_type": utils.UserTypeHelper,
-		"document":  "12345678901",
-		"phone":     "11999999999",
+		"name":       "João da Silva",
+		"email":      "joao@example.com",
+		"password":   "senha123",
+		"user_type":  utils.UserTypeHelper,
+		"document":   "12345678901",
+		"phone":      "11999999999",
 		"categories": []uint{1, 2},
 		"address": map[string]interface{}{
 			"street":       "Rua das Flores",
@@ -45,6 +45,7 @@ func validRegisterBody() []byte {
 			"neighborhood": "Centro",
 			"city":         "São Paulo",
 			"state":        "SP",
+			"zip_code":     "01001000",
 		},
 	}
 	b, _ := json.Marshal(body)

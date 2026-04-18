@@ -89,6 +89,7 @@ func TestReviewController_Create_ReviewAlreadyExists(t *testing.T) {
 	}
 
 	dto := domain.CreateReviewRequestDTO{
+		ProposalID:  uuid.New().String(),
 		HelperID:    uuid.New().String(),
 		Rate:        5,
 		Review:      "Test",
@@ -112,6 +113,62 @@ func TestReviewController_Create_ReviewAlreadyExists(t *testing.T) {
 	assert.Contains(t, w.Body.String(), utils.ErrReviewAlreadyExists.Error())
 }
 
+func TestReviewController_Create_ProposalNotFinished(t *testing.T) {
+	svc := new(MockReviewService)
+
+	businessID := uuid.New()
+	payload := &auth.Payload{
+		UserID:   businessID.String(),
+		UserType: utils.UserTypeBusiness,
+	}
+
+	dto := domain.CreateReviewRequestDTO{
+		ProposalID:  uuid.New().String(),
+		HelperID:    uuid.New().String(),
+		Rate:        5,
+		Review:      "Test",
+		ServiceType: "Test",
+	}
+
+	body, _ := json.Marshal(dto)
+	req := httptest.NewRequest(http.MethodPost, "/review", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Set("authorization_payload", payload)
+
+	svc.On("CreateReview", mock.Anything, mock.Anything).Return(utils.ErrProposalNotFinished)
+
+	ctrl := NewReviewController(svc)
+	ctrl.Create(c)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), utils.ErrProposalNotFinished.Error())
+}
+
+func TestReviewController_Create_MissingProposalID(t *testing.T) {
+	svc := new(MockReviewService)
+
+	payload := &auth.Payload{
+		UserID:   uuid.New().String(),
+		UserType: utils.UserTypeBusiness,
+	}
+
+	body := bytes.NewBufferString(`{"helper_id":"` + uuid.New().String() + `","rate":5,"review":"Test","service_type":"Test"}`)
+	req := httptest.NewRequest(http.MethodPost, "/review", body)
+	w := httptest.NewRecorder()
+
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Set("authorization_payload", payload)
+
+	ctrl := NewReviewController(svc)
+	ctrl.Create(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
 func TestReviewController_Create_Success(t *testing.T) {
 	svc := new(MockReviewService)
 
@@ -122,6 +179,7 @@ func TestReviewController_Create_Success(t *testing.T) {
 	}
 
 	dto := domain.CreateReviewRequestDTO{
+		ProposalID:  uuid.New().String(),
 		HelperID:    uuid.New().String(),
 		Rate:        5,
 		Review:      "Great service!",

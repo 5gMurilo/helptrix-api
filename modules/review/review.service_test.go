@@ -45,6 +45,7 @@ func TestReviewService_CreateReview_Success(t *testing.T) {
 	helperID := uuid.New()
 
 	dto := domain.CreateReviewRequestDTO{
+		ProposalID:  uuid.New().String(),
 		HelperID:    helperID.String(),
 		Rate:        5,
 		Review:      "Great service!",
@@ -66,6 +67,7 @@ func TestReviewService_CreateReview_SelfReview(t *testing.T) {
 	userID := uuid.New()
 
 	dto := domain.CreateReviewRequestDTO{
+		ProposalID:  uuid.New().String(),
 		HelperID:    userID.String(),
 		Rate:        5,
 		Review:      "Self review",
@@ -85,7 +87,27 @@ func TestReviewService_CreateReview_InvalidUUID(t *testing.T) {
 	businessID := uuid.New()
 
 	dto := domain.CreateReviewRequestDTO{
+		ProposalID:  uuid.New().String(),
 		HelperID:    "invalid-uuid",
+		Rate:        5,
+		Review:      "Test",
+		ServiceType: "Plumbing",
+	}
+
+	err := svc.CreateReview(businessID, dto)
+
+	assert.Error(t, err)
+}
+
+func TestReviewService_CreateReview_InvalidProposalUUID(t *testing.T) {
+	repo := new(MockReviewRepository)
+	svc := NewReviewService(repo)
+
+	businessID := uuid.New()
+
+	dto := domain.CreateReviewRequestDTO{
+		ProposalID:  "invalid-uuid",
+		HelperID:    uuid.New().String(),
 		Rate:        5,
 		Review:      "Test",
 		ServiceType: "Plumbing",

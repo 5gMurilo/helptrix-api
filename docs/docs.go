@@ -1712,12 +1712,16 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "helper_id",
+                "proposal_id",
                 "rate",
                 "review",
                 "service_type"
             ],
             "properties": {
                 "helper_id": {
+                    "type": "string"
+                },
+                "proposal_id": {
                     "type": "string"
                 },
                 "rate": {

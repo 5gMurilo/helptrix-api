@@ -48,13 +48,13 @@ var (
 
 	ErrServiceNotFound = errors.New("service not found")
 
-	ErrProposalNotFound        = errors.New("proposal not found")
+	ErrProposalNotFound               = errors.New("proposal not found")
 	ErrProposalAlreadyActiveForHelper = errors.New("user already has an active proposal for this helper")
-	ErrProposalFinished        = errors.New("proposal is already in a terminal status")
-	ErrProposalCannotBeRefused = errors.New("proposal cannot be refused in its current status")
-	ErrProposalInvalidStatus   = errors.New("invalid proposal status or transition")
-	ErrProposalUnauthorized    = errors.New("user is not authorized to perform this status change")
-	ErrNotProposalParticipant  = errors.New("user is not a participant of this proposal")
+	ErrProposalFinished               = errors.New("proposal is already in a terminal status")
+	ErrProposalCannotBeRefused        = errors.New("proposal cannot be refused in its current status")
+	ErrProposalInvalidStatus          = errors.New("invalid proposal status or transition")
+	ErrProposalUnauthorized           = errors.New("user is not authorized to perform this status change")
+	ErrNotProposalParticipant         = errors.New("user is not a participant of this proposal")
 
 	ErrOTPNotFound   = errors.New("otp not found")
 	ErrOTPExpired    = errors.New("otp has expired")
@@ -63,7 +63,8 @@ var (
 
 	ErrInvalidImageType = errors.New("invalid image type")
 
-	ErrReviewAlreadyExists = errors.New("business has already reviewed this helper")
-	ErrProposalNotFinished = errors.New("proposal must be finished before creating review")
-	ErrCannotReviewSelf    = errors.New("user cannot review themselves")
+	ErrReviewAlreadyExists    = errors.New("proposal has already been reviewed")
+	ErrProposalNotFinished    = errors.New("proposal must be finished before creating review")
+	ErrReviewProposalMismatch = errors.New("proposal does not match business and helper")
+	ErrCannotReviewSelf       = errors.New("user cannot review themselves")
 )

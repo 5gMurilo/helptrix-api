@@ -6,6 +6,7 @@ import (
 
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	reviewinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/review"
+	"github.com/5gMurilo/helptrix-api/core/utils"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -24,29 +25,34 @@ func (r *reviewRepository) Create(review *domain.Review) error {
 		return tx.Error
 	}
 
-	// Verify proposal exists and is finished
 	var proposal domain.Proposal
-	err := tx.Where("helper_id = ? AND user_id = ? AND status = ?", review.HelperID, review.BusinessID, "finished").
-		First(&proposal).Error
+	err := tx.Where("id = ?", review.ProposalID).First(&proposal).Error
 	if err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("no finished proposal found for this business and helper")
+			return utils.ErrProposalNotFound
 		}
 		return fmt.Errorf("error verifying proposal: %w", err)
 	}
 
-	// Set category_id from the proposal
+	if proposal.UserID != review.BusinessID || proposal.HelperID != review.HelperID {
+		tx.Rollback()
+		return utils.ErrReviewProposalMismatch
+	}
+
+	if proposal.Status != utils.ProposalStatusFinished {
+		tx.Rollback()
+		return utils.ErrProposalNotFinished
+	}
+
 	review.CategoryID = proposal.CategoryID
 
-	// Check for existing review (active, not soft-deleted)
 	var existing domain.Review
-	existingErr := tx.Where("business_id = ? AND helper_id = ? AND deleted_at IS NULL",
-		review.BusinessID, review.HelperID).
+	existingErr := tx.Where("proposal_id = ? AND deleted_at IS NULL", review.ProposalID).
 		First(&existing).Error
 	if existingErr == nil {
 		tx.Rollback()
-		return fmt.Errorf("business has already reviewed this helper")
+		return utils.ErrReviewAlreadyExists
 	}
 	if !errors.Is(existingErr, gorm.ErrRecordNotFound) {
 		tx.Rollback()
