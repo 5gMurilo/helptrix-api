@@ -7,6 +7,8 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
+const defaultFromEmail = "no-reply@helptrix.com"
+
 type ResendEmailSender struct {
 	client    *resend.Client
 	fromEmail string
@@ -14,10 +16,15 @@ type ResendEmailSender struct {
 
 func NewResendEmailSender() *ResendEmailSender {
 	apiKey := os.Getenv("RESEND_API_KEY")
+	fromEmail := os.Getenv("RESEND_FROM_EMAIL")
+	if fromEmail == "" {
+		fromEmail = defaultFromEmail
+	}
+
 	client := resend.NewClient(apiKey)
 	return &ResendEmailSender{
 		client:    client,
-		fromEmail: "onboarding@resend.dev",
+		fromEmail: fromEmail,
 	}
 }
 
