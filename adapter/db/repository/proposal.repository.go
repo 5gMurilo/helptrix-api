@@ -70,7 +70,7 @@ func (r *proposalRepository) HasBlockingProposalForHelper(userID, helperID uuid.
 	var count int64
 
 	if err := r.db.Model(&domain.Proposal{}).
-		Where("user_id = ? AND helper_id = ? AND status != ?", userID, helperID, utils.ProposalStatusAccepted).
+		Where("user_id = ? AND helper_id = ? AND status = ?", userID, helperID, utils.ProposalStatusPending).
 		Count(&count).Error; err != nil {
 		return false, fmt.Errorf("error checking proposal for helper: %w", err)
 	}

@@ -12,8 +12,8 @@ import (
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	proposalinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/proposal"
-	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
 	"github.com/5gMurilo/helptrix-api/core/utils"
+	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -175,12 +175,12 @@ func TestProposalController_Create_400BadBody(t *testing.T) {
 	}
 }
 
-func TestProposalController_Create_409AlreadyActive(t *testing.T) {
+func TestProposalController_Create_409AlreadyPending(t *testing.T) {
 	userID := uuid.New()
 	helperID := uuid.New()
 	svc := defaultMockService(userID, helperID)
 	svc.CreateFn = func(dto domain.CreateProposalRequestDTO, uid uuid.UUID) (domain.ProposalResponseDTO, error) {
-		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyActiveForHelper
+		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyPendingForHelper
 	}
 
 	router := setupProposalRouter(svc, userID.String(), utils.UserTypeBusiness)

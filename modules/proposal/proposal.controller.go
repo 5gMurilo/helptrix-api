@@ -57,7 +57,7 @@ func (ctrl *ProposalController) Create(c *gin.Context) {
 
 	response, err := ctrl.service.Create(dto, userID)
 	if err != nil {
-		if errors.Is(err, utils.ErrProposalAlreadyActiveForHelper) {
+		if errors.Is(err, utils.ErrProposalAlreadyPendingForHelper) {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}

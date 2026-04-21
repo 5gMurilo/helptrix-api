@@ -7,18 +7,18 @@ import (
 
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	proposalinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/proposal"
-	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
 	"github.com/5gMurilo/helptrix-api/core/utils"
+	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
 	"github.com/google/uuid"
 )
 
 // mockProposalRepository implements IProposalRepository for unit tests.
 type mockProposalRepository struct {
-	CreateFn                      func(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.Proposal, error)
-	FindByIDFn                    func(id uuid.UUID) (*domain.Proposal, error)
-	UpdateStatusFn                func(id uuid.UUID, status string) (*domain.Proposal, error)
-	ListByUserIDFn                func(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
-	ListByHelperIDFn              func(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
+	CreateFn                       func(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.Proposal, error)
+	FindByIDFn                     func(id uuid.UUID) (*domain.Proposal, error)
+	UpdateStatusFn                 func(id uuid.UUID, status string) (*domain.Proposal, error)
+	ListByUserIDFn                 func(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
+	ListByHelperIDFn               func(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
 	HasBlockingProposalForHelperFn func(userID uuid.UUID, helperID uuid.UUID) (bool, error)
 }
 
@@ -131,8 +131,8 @@ func TestProposalService_Create_BlockedSameHelper(t *testing.T) {
 
 	_, err := svc.Create(validCreateDTO(helperID), userID)
 
-	if !errors.Is(err, utils.ErrProposalAlreadyActiveForHelper) {
-		t.Errorf("esperado ErrProposalAlreadyActiveForHelper, obteve: %v", err)
+	if !errors.Is(err, utils.ErrProposalAlreadyPendingForHelper) {
+		t.Errorf("esperado ErrProposalAlreadyPendingForHelper, obteve: %v", err)
 	}
 }
 

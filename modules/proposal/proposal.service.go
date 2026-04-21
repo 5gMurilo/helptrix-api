@@ -21,7 +21,7 @@ func (s *ProposalService) Create(dto domain.CreateProposalRequestDTO, userID uui
 		return domain.ProposalResponseDTO{}, err
 	}
 	if hasBlocking {
-		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyActiveForHelper
+		return domain.ProposalResponseDTO{}, utils.ErrProposalAlreadyPendingForHelper
 	}
 
 	proposal, err := s.repo.Create(dto, userID)
