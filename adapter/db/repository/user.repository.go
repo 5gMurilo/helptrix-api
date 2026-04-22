@@ -24,6 +24,7 @@ func NewUserRepository(db *gorm.DB) userinterfaces.IUserRepository {
 
 func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilters) (domain.GetProfileResponseDTO, error) {
 	var user domain.User
+	var reviews []domain.ReviewListResponseDTO
 
 	result := r.db.
 		Preload("Address").
@@ -93,13 +94,6 @@ func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilt
 			photos = []string{}
 		}
 
-		// Rate stats — reviews table may not exist yet; default to 0/0
-		rateStats := domain.ProfileServiceRateDTO{
-			RateQuantity:  0,
-			AverageRating: 0,
-		}
-		r.queryRateStats(svc.UserID, svc.CategoryID, &rateStats)
-
 		services = append(services, domain.ServiceResponseDTO{
 			ID:            svc.ID,
 			Name:          svc.Name,
@@ -115,8 +109,37 @@ func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilt
 			},
 			Photos: photos,
 		})
+	}
 
-		_ = rateStats // available for future use when reviews table is added
+	if user.UserType == "helper" {
+		err := r.db.
+			Table("reviews").
+			Select("reviews.*, users.name AS business_name, users.profile_picture AS business_picture").
+			Joins("JOIN users ON users.id = reviews.business_id AND users.deleted_at IS NULL").
+			Where("reviews.helper_id = ?", user.ID).
+			Where("reviews.deleted_at IS NULL").
+			Find(&reviews).Error
+
+		if err != nil {
+			return domain.GetProfileResponseDTO{}, err
+		}
+
+		dto := domain.GetProfileResponseDTO{
+			ID:             user.ID,
+			Name:           user.Name,
+			Email:          user.Email,
+			Phone:          user.Phone,
+			Biography:      user.Biography,
+			ProfilePicture: user.ProfilePicture,
+			UserType:       user.UserType,
+			Categories:     categories,
+			Address:        address,
+			Reviews:        reviews,
+			Services:       services,
+			CreatedAt:      user.CreatedAt,
+		}
+
+		return dto, nil
 	}
 
 	dto := domain.GetProfileResponseDTO{
@@ -135,26 +158,6 @@ func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilt
 	}
 
 	return dto, nil
-}
-
-// queryRateStats attempts to fetch aggregated review stats. If the reviews table
-// does not exist yet, it silently leaves stats at 0/0.
-func (r *userRepository) queryRateStats(userID uuid.UUID, categoryID uint, stats *domain.ProfileServiceRateDTO) {
-	type rateResult struct {
-		RateQuantity  int     `gorm:"column:rate_quantity"`
-		AverageRating float64 `gorm:"column:average_rating"`
-	}
-	var res rateResult
-	err := r.db.Raw(
-		`SELECT COUNT(*) AS rate_quantity, COALESCE(AVG(rate), 0) AS average_rating
-		 FROM reviews
-		 WHERE reviewed_user_id = ? AND category_id = ? AND deleted_at IS NULL`,
-		userID, categoryID,
-	).Scan(&res).Error
-	if err == nil {
-		stats.RateQuantity = res.RateQuantity
-		stats.AverageRating = res.AverageRating
-	}
 }
 
 func hasIntersection(a, b []string) bool {
