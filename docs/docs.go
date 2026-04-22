@@ -2064,6 +2064,15 @@ const docTemplate = `{
         "domain.ReviewListResponseDTO": {
             "type": "object",
             "properties": {
+                "business_id": {
+                    "type": "string"
+                },
+                "business_name": {
+                    "type": "string"
+                },
+                "business_picture": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
