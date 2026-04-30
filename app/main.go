@@ -29,13 +29,13 @@ import (
 	uploaderinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/uploader"
 	authmodule "github.com/5gMurilo/helptrix-api/modules/auth"
 	categorymodule "github.com/5gMurilo/helptrix-api/modules/category"
+	helpermodule "github.com/5gMurilo/helptrix-api/modules/helper"
 	otpmodule "github.com/5gMurilo/helptrix-api/modules/otp"
 	proposalmodule "github.com/5gMurilo/helptrix-api/modules/proposal"
+	reviewmodule "github.com/5gMurilo/helptrix-api/modules/review"
 	servicemodule "github.com/5gMurilo/helptrix-api/modules/service"
 	uploadermodule "github.com/5gMurilo/helptrix-api/modules/uploader"
 	uploaderstrategies "github.com/5gMurilo/helptrix-api/modules/uploader/strategies"
-	helpermodule "github.com/5gMurilo/helptrix-api/modules/helper"
-	reviewmodule "github.com/5gMurilo/helptrix-api/modules/review"
 	usermodule "github.com/5gMurilo/helptrix-api/modules/user"
 )
 
@@ -120,7 +120,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "10000"
+		log.Fatal("PORT environment variable is required")
 	}
 
 	log.Printf("starting server on port %s", port)

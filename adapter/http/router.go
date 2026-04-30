@@ -2,13 +2,14 @@ package adapterhttp
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/adapter/http/middleware"
 	authifaces "github.com/5gMurilo/helptrix-api/core/interfaces/auth"
 	categoryinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/category"
-	otpinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/otp"
 	helperinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/helper"
+	otpinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/otp"
 	proposalinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/proposal"
 	reviewinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/review"
 	serviceinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/service"
@@ -31,6 +32,7 @@ func NewRouter(
 	helperCtrl helperinterfaces.IHelperController,
 	reviewCtrl reviewinterfaces.IReviewController,
 ) *gin.Engine {
+	gin.SetMode(os.Getenv("GIN_MODE"))
 	router := gin.Default()
 
 	router.GET("/health", func(c *gin.Context) {

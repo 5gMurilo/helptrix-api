@@ -100,6 +100,53 @@ The Dockerfile uses a two-stage build: a `golang:1.23-alpine` builder stage comp
 
 ---
 
+## Testing
+
+### Run all tests
+
+```bash
+go test ./...
+```
+
+### Run tests for a specific module
+
+```bash
+go test ./modules/auth/...
+```
+
+### Run tests with coverage
+
+```bash
+go test ./... -cover
+```
+
+### Run tests with coverage profile and view per-function coverage
+
+```bash
+go test ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
+```
+
+### Run tests with verbose output
+
+```bash
+go test ./... -v
+```
+
+### Run a specific test by name
+
+```bash
+go test ./modules/auth/... -run TestAuthService_Login -v
+```
+
+### Run tests with race detector
+
+```bash
+go test ./... -race
+```
+
+---
+
 ## Environment Variables
 
 | Variable                | Description                                      | Default value    |

@@ -45,7 +45,7 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error" + err.Error()})
 		return
 	}
 
