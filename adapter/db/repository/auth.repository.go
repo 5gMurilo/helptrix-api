@@ -58,12 +58,15 @@ func (r *authRepository) Register(dto domain.RegisterRequestDTO, hashedPassword 
 		return domain.User{}, nil, errors.New("error creating user address")
 	}
 
-	for _, categoryID := range dto.Categories {
-		uc := domain.UserCategory{
-			UserID:     user.ID,
-			CategoryID: categoryID,
+	if len(dto.Categories) > 0 {
+		ucs := make([]domain.UserCategory, 0, len(dto.Categories))
+		for _, categoryID := range dto.Categories {
+			ucs = append(ucs, domain.UserCategory{
+				UserID:     user.ID,
+				CategoryID: categoryID,
+			})
 		}
-		if err := tx.Create(&uc).Error; err != nil {
+		if err := tx.Create(&ucs).Error; err != nil {
 			tx.Rollback()
 			return domain.User{}, nil, errors.New("error to assign categories for this user")
 		}
