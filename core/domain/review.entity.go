@@ -10,8 +10,8 @@ import (
 type Review struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	ProposalID  uuid.UUID      `gorm:"type:uuid;index:idx_reviews_proposal_id" json:"proposal_id"`
-	BusinessID  uuid.UUID      `gorm:"type:uuid;not null;index:idx_reviews_business_id" json:"business_id"`
-	HelperID    uuid.UUID      `gorm:"type:uuid;not null;index:idx_reviews_helper_id" json:"helper_id"`
+	BusinessID  uuid.UUID      `gorm:"type:uuid;not null;index:idx_reviews_business_id;index:idx_reviews_biz_helper,composite:biz" json:"business_id"`
+	HelperID    uuid.UUID      `gorm:"type:uuid;not null;index:idx_reviews_helper_id;index:idx_reviews_biz_helper,composite:helper" json:"helper_id"`
 	CategoryID  uint           `gorm:"not null" json:"category_id"`
 	Rate        int            `gorm:"not null" json:"rate"`
 	Review      string         `gorm:"type:text;not null" json:"review"`

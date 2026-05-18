@@ -77,6 +77,33 @@ docker compose up
 
 This starts a PostgreSQL 16 container and the API container. The API waits for the database health check to pass before starting. The application is available at `http://localhost:8080`.
 
+### Seeding the database
+
+Run the category seeder to populate the `categories` table with the 12 predefined service categories:
+
+```bash
+go run cmd/seed/main.go
+```
+
+The seeder uses `FirstOrCreate` under the hood, so re-running it is safe — existing categories are never duplicated.
+
+The following categories are seeded:
+
+| Name | Description |
+|------|-------------|
+| Residential Cleaning | Professional housekeeping, organization, and sanitizing of domestic spaces |
+| Plumbing | Installation and repair of pipes, faucets, and drainage systems |
+| Electrical Services | Installation, maintenance, and repair of electrical panels, outlets, and lighting |
+| Gardening & Landscaping | Lawn care, pruning, planting, and landscape maintenance services |
+| IT Support | Technical assistance for computers, networks, software setup, and troubleshooting |
+| Childcare & Babysitting | Professional childcare and supervised babysitting for families |
+| Furniture Assembly | Assembly, installation, and arrangement of modular and custom furniture |
+| Pet Care & Dog Walking | Dog walking, pet sitting, and basic care sessions for animals |
+| Private Tutoring | Personalized academic support and homework assistance for students of all levels |
+| Local Delivery & Errands | Pickup and delivery of parcels and documents within the city |
+| House Painting & Renovation | Interior and exterior painting, wall repair, and home renovation services |
+| Personal Chef & Meal Prep | Custom meal preparation and cooking services for individuals and events |
+
 ### Build
 
 ```bash
@@ -97,6 +124,7 @@ The Dockerfile uses a two-stage build: a `golang:1.23-alpine` builder stage comp
 | `go test ./modules/auth/... -run <name>`   | Run a specific test by name               |
 | `swag init -g app/main.go`                 | Regenerate Swagger documentation          |
 | `go build -o helptrix-api ./app/...`       | Build the production binary               |
+| `go run cmd/seed/main.go`                  | Seed the database with initial categories |
 
 ---
 
@@ -226,4 +254,4 @@ The API uses **Paseto v2 symmetric tokens**.
 
 ---
 
-*Created: 2026-04-03 | Last updated: 2026-04-03*
+*Created: 2026-04-03 | Last updated: 2026-05-18*

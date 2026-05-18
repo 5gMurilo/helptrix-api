@@ -16,6 +16,16 @@ func NewCategoryRepository(db *gorm.DB) categoryinterfaces.ICategoryRepository {
 	return &categoryRepository{db: db}
 }
 
+func (r *categoryRepository) Seed(categories []domain.Category) error {
+	for i := range categories {
+		row := categories[i]
+		if res := r.db.Where("name = ?", row.Name).FirstOrCreate(&row); res.Error != nil {
+			return fmt.Errorf("seed category %q: %w", row.Name, res.Error)
+		}
+	}
+	return nil
+}
+
 func (r *categoryRepository) List() ([]domain.CategoryListItemResponseDTO, error) {
 	var rows []domain.Category
 	if err := r.db.Order("id ASC").Find(&rows).Error; err != nil {

@@ -115,11 +115,11 @@ func (s *ProposalService) UpdateStatus(
 	return toResponseDTO(*updated), nil
 }
 
-func (s *ProposalService) List(requesterID uuid.UUID, requesterType string, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+func (s *ProposalService) List(requesterID uuid.UUID, requesterType string, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 	if requesterType == utils.UserTypeBusiness {
-		return s.repo.ListByUserID(requesterID, statusFilter)
+		return s.repo.ListByUserID(requesterID, statusFilter, p)
 	}
-	return s.repo.ListByHelperID(requesterID, statusFilter)
+	return s.repo.ListByHelperID(requesterID, statusFilter, p)
 }
 
 func toResponseDTO(p domain.Proposal) domain.ProposalResponseDTO {

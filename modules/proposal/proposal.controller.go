@@ -3,6 +3,7 @@ package proposal
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/core/domain"
@@ -197,11 +198,25 @@ func (ctrl *ProposalController) List(c *gin.Context) {
 		return
 	}
 
-	response, err := ctrl.service.List(requesterID, payload.UserType, statusFilter)
+	p := parsePagination(c)
+
+	response, err := ctrl.service.List(requesterID, payload.UserType, statusFilter, p)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func parsePagination(c *gin.Context) domain.PaginationParams {
+	page := 1
+	pageSize := domain.DefaultPageSize
+	if v, err := strconv.Atoi(c.Query("page")); err == nil && v > 0 {
+		page = v
+	}
+	if v, err := strconv.Atoi(c.Query("page_size")); err == nil && v > 0 {
+		pageSize = v
+	}
+	return domain.PaginationParams{Page: page, PageSize: pageSize}
 }

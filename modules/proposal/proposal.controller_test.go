@@ -23,7 +23,7 @@ type mockProposalService struct {
 	CreateFn       func(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.ProposalResponseDTO, error)
 	GetByIDFn      func(proposalID uuid.UUID, requesterID uuid.UUID) (domain.ProposalResponseDTO, error)
 	UpdateStatusFn func(proposalID uuid.UUID, dto domain.UpdateProposalStatusRequestDTO, requesterID uuid.UUID, requesterType string) (domain.ProposalResponseDTO, error)
-	ListFn         func(requesterID uuid.UUID, requesterType string, statusFilter string) ([]domain.ProposalResponseDTO, error)
+	ListFn         func(requesterID uuid.UUID, requesterType string, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error)
 }
 
 func (m *mockProposalService) Create(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.ProposalResponseDTO, error) {
@@ -38,8 +38,8 @@ func (m *mockProposalService) UpdateStatus(proposalID uuid.UUID, dto domain.Upda
 	return m.UpdateStatusFn(proposalID, dto, requesterID, requesterType)
 }
 
-func (m *mockProposalService) List(requesterID uuid.UUID, requesterType string, statusFilter string) ([]domain.ProposalResponseDTO, error) {
-	return m.ListFn(requesterID, requesterType, statusFilter)
+func (m *mockProposalService) List(requesterID uuid.UUID, requesterType string, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
+	return m.ListFn(requesterID, requesterType, statusFilter, p)
 }
 
 var _ proposalinterfaces.IProposalService = (*mockProposalService)(nil)
@@ -59,7 +59,7 @@ func defaultMockService(userID, helperID uuid.UUID) *mockProposalService {
 			updated.Status = dto.Status
 			return updated, nil
 		},
-		ListFn: func(requesterID uuid.UUID, requesterType string, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+		ListFn: func(requesterID uuid.UUID, requesterType string, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 			return []domain.ProposalResponseDTO{resp}, nil
 		},
 	}
@@ -473,7 +473,7 @@ func TestProposalController_List_WithStatusFilter(t *testing.T) {
 	svc := defaultMockService(userID, helperID)
 
 	capturedFilter := ""
-	svc.ListFn = func(requesterID uuid.UUID, requesterType string, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+	svc.ListFn = func(requesterID uuid.UUID, requesterType string, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 		capturedFilter = statusFilter
 		return []domain.ProposalResponseDTO{}, nil
 	}
@@ -495,7 +495,7 @@ func TestProposalController_List_500InternalError(t *testing.T) {
 	userID := uuid.New()
 	helperID := uuid.New()
 	svc := defaultMockService(userID, helperID)
-	svc.ListFn = func(requesterID uuid.UUID, requesterType string, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+	svc.ListFn = func(requesterID uuid.UUID, requesterType string, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 		return nil, errors.New("db error")
 	}
 

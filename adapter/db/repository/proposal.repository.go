@@ -50,20 +50,14 @@ func (r *proposalRepository) FindByID(id uuid.UUID) (*domain.Proposal, error) {
 }
 
 func (r *proposalRepository) UpdateStatus(id uuid.UUID, status string) (*domain.Proposal, error) {
-	var proposal domain.Proposal
-
-	if err := r.db.Where("id = ?", id).First(&proposal).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, utils.ErrProposalNotFound
-		}
-		return nil, fmt.Errorf("error finding proposal: %w", err)
+	result := r.db.Model(&domain.Proposal{}).Where("id = ?", id).Update("status", status)
+	if result.Error != nil {
+		return nil, fmt.Errorf("error updating proposal status: %w", result.Error)
 	}
-
-	if err := r.db.Model(&proposal).Update("status", status).Error; err != nil {
-		return nil, fmt.Errorf("error updating proposal status: %w", err)
+	if result.RowsAffected == 0 {
+		return nil, utils.ErrProposalNotFound
 	}
-
-	return &proposal, nil
+	return r.FindByID(id)
 }
 
 func (r *proposalRepository) HasBlockingProposalForHelper(userID, helperID uuid.UUID) (bool, error) {
@@ -78,30 +72,32 @@ func (r *proposalRepository) HasBlockingProposalForHelper(userID, helperID uuid.
 	return count > 0, nil
 }
 
-func (r *proposalRepository) ListByUserID(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+func (r *proposalRepository) ListByUserID(userID uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 	var proposals []domain.Proposal
 
+	offset := (p.Page - 1) * p.PageSize
 	query := r.db.Where("user_id = ?", userID)
 	if statusFilter != "" {
 		query = query.Where("status = ?", statusFilter)
 	}
 
-	if err := query.Find(&proposals).Error; err != nil {
+	if err := query.Order("created_at DESC").Offset(offset).Limit(p.PageSize).Find(&proposals).Error; err != nil {
 		return nil, fmt.Errorf("error listing proposals by user: %w", err)
 	}
 
 	return mapProposalsToDTO(proposals), nil
 }
 
-func (r *proposalRepository) ListByHelperID(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+func (r *proposalRepository) ListByHelperID(helperID uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 	var proposals []domain.Proposal
 
+	offset := (p.Page - 1) * p.PageSize
 	query := r.db.Where("helper_id = ?", helperID)
 	if statusFilter != "" {
 		query = query.Where("status = ?", statusFilter)
 	}
 
-	if err := query.Find(&proposals).Error; err != nil {
+	if err := query.Order("created_at DESC").Offset(offset).Limit(p.PageSize).Find(&proposals).Error; err != nil {
 		return nil, fmt.Errorf("error listing proposals by helper: %w", err)
 	}
 

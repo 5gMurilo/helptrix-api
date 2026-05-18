@@ -29,8 +29,12 @@ func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilt
 	result := r.db.
 		Preload("Address").
 		Preload("Categories").
-		Preload("Services").
-		Preload("Services.Category").
+		Preload("Services", func(db *gorm.DB) *gorm.DB {
+			if filters.CategoryID != nil {
+				return db.Where("category_id = ?", *filters.CategoryID).Preload("Category")
+			}
+			return db.Preload("Category")
+		}).
 		First(&user, "id = ?", userID)
 
 	if result.Error != nil {
@@ -72,11 +76,6 @@ func (r *userRepository) GetProfile(userID uuid.UUID, filters domain.ProfileFilt
 		}
 		if actuationDays == nil {
 			actuationDays = []string{}
-		}
-
-		// Apply CategoryID filter
-		if filters.CategoryID != nil && svc.CategoryID != *filters.CategoryID {
-			continue
 		}
 
 		// Apply ActuationDays filter

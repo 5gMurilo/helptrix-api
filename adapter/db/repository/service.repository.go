@@ -63,11 +63,12 @@ func (r *serviceRepository) Create(userID uuid.UUID, dto domain.CreateServiceReq
 		return domain.ServiceResponseDTO{}, fmt.Errorf("error creating service: %w", err)
 	}
 
-	if err := tx.Commit().Error; err != nil {
+	if err := tx.Preload("Category").First(&service, "id = ?", service.ID).Error; err != nil {
+		tx.Rollback()
 		return domain.ServiceResponseDTO{}, fmt.Errorf("error creating service: %w", err)
 	}
 
-	if err := r.db.Preload("Category").First(&service, "id = ?", service.ID).Error; err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return domain.ServiceResponseDTO{}, fmt.Errorf("error creating service: %w", err)
 	}
 
@@ -248,11 +249,12 @@ func (r *serviceRepository) Update(serviceID uuid.UUID, userID uuid.UUID, dto do
 		return domain.ServiceResponseDTO{}, fmt.Errorf("error updating service: %w", err)
 	}
 
-	if err := tx.Commit().Error; err != nil {
+	if err := tx.Preload("Category").First(&service, "id = ?", service.ID).Error; err != nil {
+		tx.Rollback()
 		return domain.ServiceResponseDTO{}, fmt.Errorf("error updating service: %w", err)
 	}
 
-	if err := r.db.Preload("Category").First(&service, "id = ?", service.ID).Error; err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return domain.ServiceResponseDTO{}, fmt.Errorf("error updating service: %w", err)
 	}
 
