@@ -9,7 +9,7 @@ import (
 
 type Address struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID       uuid.UUID      `gorm:"type:uuid;not null" json:"user_id"`
+	UserID       uuid.UUID      `gorm:"type:uuid;not null;index:idx_addresses_user_id" json:"user_id"`
 	Street       string         `gorm:"not null" json:"street"`
 	Number       string         `gorm:"not null" json:"number"`
 	Complement   string         `json:"complement,omitempty"`
