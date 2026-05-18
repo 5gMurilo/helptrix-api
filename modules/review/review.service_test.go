@@ -19,13 +19,13 @@ func (m *MockReviewRepository) Create(review *domain.Review) error {
 	return args.Error(0)
 }
 
-func (m *MockReviewRepository) ListByBusiness(businessID uuid.UUID) ([]domain.Review, error) {
-	args := m.Called(businessID)
+func (m *MockReviewRepository) ListByBusiness(businessID uuid.UUID, p domain.PaginationParams) ([]domain.Review, error) {
+	args := m.Called(businessID, p)
 	return args.Get(0).([]domain.Review), args.Error(1)
 }
 
-func (m *MockReviewRepository) ListByHelper(helperID uuid.UUID) ([]domain.Review, error) {
-	args := m.Called(helperID)
+func (m *MockReviewRepository) ListByHelper(helperID uuid.UUID, p domain.PaginationParams) ([]domain.Review, error) {
+	args := m.Called(helperID, p)
 	return args.Get(0).([]domain.Review), args.Error(1)
 }
 
@@ -132,9 +132,10 @@ func TestReviewService_ListBusinessReviews_Success(t *testing.T) {
 		},
 	}
 
-	repo.On("ListByBusiness", businessID).Return(reviews, nil)
+	p := domain.PaginationParams{Page: 1, PageSize: domain.DefaultPageSize}
+	repo.On("ListByBusiness", businessID, p).Return(reviews, nil)
 
-	result, err := svc.ListBusinessReviews(businessID)
+	result, err := svc.ListBusinessReviews(businessID, p)
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -159,9 +160,10 @@ func TestReviewService_ListHelperReviews_Success(t *testing.T) {
 		},
 	}
 
-	repo.On("ListByHelper", helperID).Return(reviews, nil)
+	p := domain.PaginationParams{Page: 1, PageSize: domain.DefaultPageSize}
+	repo.On("ListByHelper", helperID, p).Return(reviews, nil)
 
-	result, err := svc.ListHelperReviews(helperID)
+	result, err := svc.ListHelperReviews(helperID, p)
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)

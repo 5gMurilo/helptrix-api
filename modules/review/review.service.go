@@ -42,8 +42,8 @@ func (s *ReviewService) CreateReview(businessID uuid.UUID, dto domain.CreateRevi
 	return s.repo.Create(review)
 }
 
-func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID) ([]domain.ReviewListResponseDTO, error) {
-	reviews, err := s.repo.ListByBusiness(businessID)
+func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error) {
+	reviews, err := s.repo.ListByBusiness(businessID, p)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID) ([]domain.Revi
 	for _, r := range reviews {
 		result = append(result, domain.ReviewListResponseDTO{
 			Rate:        r.Rate,
-			Review:      "", // Business doesn't see their own review text in list
+			Review:      "",
 			ServiceType: r.ServiceType,
 			CreatedAt:   r.CreatedAt,
 		})
@@ -61,8 +61,8 @@ func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID) ([]domain.Revi
 	return result, nil
 }
 
-func (s *ReviewService) ListHelperReviews(helperID uuid.UUID) ([]domain.ReviewListResponseDTO, error) {
-	reviews, err := s.repo.ListByHelper(helperID)
+func (s *ReviewService) ListHelperReviews(helperID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error) {
+	reviews, err := s.repo.ListByHelper(helperID, p)
 	if err != nil {
 		return nil, err
 	}
