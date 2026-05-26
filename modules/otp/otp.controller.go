@@ -2,10 +2,12 @@ package otpmodule
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	otpinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/otp"
+	"github.com/5gMurilo/helptrix-api/core/logger"
 	"github.com/5gMurilo/helptrix-api/core/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -31,15 +33,23 @@ func NewOtpController(svc otpinterfaces.IOtpService) otpinterfaces.IOtpControlle
 //	@Failure		500		{object}	map[string]string
 //	@Router			/otp/send [post]
 func (ctrl *OtpController) Send(c *gin.Context) {
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "otp"),
+		slog.String("operation", "Send"),
+	)
+
 	var dto domain.SendOTPRequestDTO
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Warn("invalid request body", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
 	response, err := ctrl.svc.Send(dto)
 	if err != nil {
+		log.Error("OTP send failed", slog.String("error", err.Error()), slog.String("email", dto.Email))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -62,9 +72,16 @@ func (ctrl *OtpController) Send(c *gin.Context) {
 //	@Failure		500		{object}	map[string]string
 //	@Router			/otp/confirm [post]
 func (ctrl *OtpController) Confirm(c *gin.Context) {
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "otp"),
+		slog.String("operation", "Confirm"),
+	)
+
 	var dto domain.ConfirmOTPRequestDTO
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Warn("invalid request body", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
@@ -72,13 +89,16 @@ func (ctrl *OtpController) Confirm(c *gin.Context) {
 	response, err := ctrl.svc.Confirm(dto)
 	if err != nil {
 		if errors.Is(err, utils.ErrOTPNotFound) {
+			log.Warn("OTP confirmation failed: OTP not found", slog.String("otp_id", dto.ID))
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, utils.ErrOTPNotWaiting) || errors.Is(err, utils.ErrOTPExpired) || errors.Is(err, utils.ErrOTPInvalid) {
+			log.Warn("OTP confirmation failed: OTP validation error", slog.String("error", err.Error()), slog.String("otp_id", dto.ID))
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("OTP confirmation failed with unexpected error", slog.String("error", err.Error()), slog.String("otp_id", dto.ID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

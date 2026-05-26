@@ -2,10 +2,12 @@ package auth
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	authinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/auth"
+	"github.com/5gMurilo/helptrix-api/core/logger"
 	"github.com/5gMurilo/helptrix-api/core/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -32,9 +34,16 @@ func NewAuthController(service authinterfaces.IAuthService) authinterfaces.IAuth
 //	@Failure		500		{object}	map[string]string
 //	@Router			/auth/register [post]
 func (ctrl *AuthController) Register(c *gin.Context) {
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "auth"),
+		slog.String("operation", "Register"),
+	)
+
 	var dto domain.RegisterRequestDTO
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Warn("invalid request body", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -42,9 +51,11 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 	response, err := ctrl.service.Register(dto)
 	if err != nil {
 		if errors.Is(err, utils.ErrUserAlreadyRegistered) {
+			log.Warn("registration conflict: user already exists", slog.String("error", err.Error()))
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("registration failed with unexpected error", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -65,9 +76,16 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 //	@Failure		401		{object}	map[string]string
 //	@Router			/auth/login [post]
 func (ctrl *AuthController) Login(c *gin.Context) {
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "auth"),
+		slog.String("operation", "Login"),
+	)
+
 	var dto domain.LoginRequestDTO
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Warn("invalid request body", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -75,9 +93,11 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 	response, err := ctrl.service.Login(dto)
 	if err != nil {
 		if errors.Is(err, utils.ErrInvalidCredentials) {
+			log.Warn("login denied: invalid credentials", slog.String("email", dto.Email))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("login failed with unexpected error", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
