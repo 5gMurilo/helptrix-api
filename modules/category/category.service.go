@@ -31,3 +31,7 @@ func (s *CategoryService) List() ([]domain.CategoryListItemResponseDTO, error) {
 
 	return result, nil
 }
+
+func (s *CategoryService) Seed(categories []domain.Category) error {
+	return s.repo.Seed(categories)
+}

@@ -16,10 +16,15 @@ import (
 
 type mockCategoryService struct {
 	ListFn func() ([]domain.CategoryListItemResponseDTO, error)
+	SeedFn func(categories []domain.Category) error
 }
 
 func (m *mockCategoryService) List() ([]domain.CategoryListItemResponseDTO, error) {
 	return m.ListFn()
+}
+
+func (m *mockCategoryService) Seed(categories []domain.Category) error {
+	return m.SeedFn(categories)
 }
 
 var _ categoryinterfaces.ICategoryService = (*mockCategoryService)(nil)

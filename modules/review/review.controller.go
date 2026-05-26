@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/core/domain"
@@ -126,7 +127,7 @@ func (ctrl *ReviewController) ListBusiness(c *gin.Context) {
 		return
 	}
 
-	reviews, err := ctrl.svc.ListBusinessReviews(businessID)
+	reviews, err := ctrl.svc.ListBusinessReviews(businessID, parsePagination(c))
 	if err != nil {
 		log.Error("failed to list business reviews", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -170,7 +171,7 @@ func (ctrl *ReviewController) ListHelper(c *gin.Context) {
 		return
 	}
 
-	reviews, err := ctrl.svc.ListHelperReviews(helperID)
+	reviews, err := ctrl.svc.ListHelperReviews(helperID, parsePagination(c))
 	if err != nil {
 		log.Error("failed to list helper reviews", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -178,4 +179,16 @@ func (ctrl *ReviewController) ListHelper(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, reviews)
+}
+
+func parsePagination(c *gin.Context) domain.PaginationParams {
+	page := 1
+	pageSize := domain.DefaultPageSize
+	if v, err := strconv.Atoi(c.Query("page")); err == nil && v > 0 {
+		page = v
+	}
+	if v, err := strconv.Atoi(c.Query("page_size")); err == nil && v > 0 {
+		pageSize = v
+	}
+	return domain.PaginationParams{Page: page, PageSize: pageSize}
 }

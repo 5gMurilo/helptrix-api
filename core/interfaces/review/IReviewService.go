@@ -7,6 +7,6 @@ import (
 
 type IReviewService interface {
 	CreateReview(businessID uuid.UUID, dto domain.CreateReviewRequestDTO) error
-	ListBusinessReviews(businessID uuid.UUID) ([]domain.ReviewListResponseDTO, error)
-	ListHelperReviews(helperID uuid.UUID) ([]domain.ReviewListResponseDTO, error)
+	ListBusinessReviews(businessID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error)
+	ListHelperReviews(helperID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error)
 }

@@ -17,8 +17,8 @@ type mockProposalRepository struct {
 	CreateFn                       func(dto domain.CreateProposalRequestDTO, userID uuid.UUID) (domain.Proposal, error)
 	FindByIDFn                     func(id uuid.UUID) (*domain.Proposal, error)
 	UpdateStatusFn                 func(id uuid.UUID, status string) (*domain.Proposal, error)
-	ListByUserIDFn                 func(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
-	ListByHelperIDFn               func(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error)
+	ListByUserIDFn                 func(userID uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error)
+	ListByHelperIDFn               func(helperID uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error)
 	HasBlockingProposalForHelperFn func(userID uuid.UUID, helperID uuid.UUID) (bool, error)
 }
 
@@ -34,12 +34,12 @@ func (m *mockProposalRepository) UpdateStatus(id uuid.UUID, status string) (*dom
 	return m.UpdateStatusFn(id, status)
 }
 
-func (m *mockProposalRepository) ListByUserID(userID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
-	return m.ListByUserIDFn(userID, statusFilter)
+func (m *mockProposalRepository) ListByUserID(userID uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
+	return m.ListByUserIDFn(userID, statusFilter, p)
 }
 
-func (m *mockProposalRepository) ListByHelperID(helperID uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
-	return m.ListByHelperIDFn(helperID, statusFilter)
+func (m *mockProposalRepository) ListByHelperID(helperID uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
+	return m.ListByHelperIDFn(helperID, statusFilter, p)
 }
 
 func (m *mockProposalRepository) HasBlockingProposalForHelper(userID uuid.UUID, helperID uuid.UUID) (bool, error) {
@@ -81,10 +81,10 @@ func defaultRepo(userID, helperID uuid.UUID) *mockProposalRepository {
 			updated.Status = status
 			return &updated, nil
 		},
-		ListByUserIDFn: func(uid uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+		ListByUserIDFn: func(uid uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 			return []domain.ProposalResponseDTO{}, nil
 		},
-		ListByHelperIDFn: func(hid uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+		ListByHelperIDFn: func(hid uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 			return []domain.ProposalResponseDTO{}, nil
 		},
 	}
@@ -494,18 +494,18 @@ func TestProposalService_List_BusinessCallsListByUserID(t *testing.T) {
 	repo := defaultRepo(userID, helperID)
 
 	listByUserIDCalled := false
-	repo.ListByUserIDFn = func(uid uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+	repo.ListByUserIDFn = func(uid uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 		listByUserIDCalled = true
 		return []domain.ProposalResponseDTO{}, nil
 	}
 	listByHelperIDCalled := false
-	repo.ListByHelperIDFn = func(hid uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+	repo.ListByHelperIDFn = func(hid uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 		listByHelperIDCalled = true
 		return []domain.ProposalResponseDTO{}, nil
 	}
 
 	svc := proposalmodule.NewProposalService(repo)
-	_, err := svc.List(userID, utils.UserTypeBusiness, "")
+	_, err := svc.List(userID, utils.UserTypeBusiness, "", domain.PaginationParams{Page: 1, PageSize: domain.DefaultPageSize})
 
 	if err != nil {
 		t.Fatalf("esperado sem erro, obteve: %v", err)
@@ -524,18 +524,18 @@ func TestProposalService_List_HelperCallsListByHelperID(t *testing.T) {
 	repo := defaultRepo(userID, helperID)
 
 	listByUserIDCalled := false
-	repo.ListByUserIDFn = func(uid uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+	repo.ListByUserIDFn = func(uid uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 		listByUserIDCalled = true
 		return []domain.ProposalResponseDTO{}, nil
 	}
 	listByHelperIDCalled := false
-	repo.ListByHelperIDFn = func(hid uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+	repo.ListByHelperIDFn = func(hid uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 		listByHelperIDCalled = true
 		return []domain.ProposalResponseDTO{}, nil
 	}
 
 	svc := proposalmodule.NewProposalService(repo)
-	_, err := svc.List(helperID, utils.UserTypeHelper, "")
+	_, err := svc.List(helperID, utils.UserTypeHelper, "", domain.PaginationParams{Page: 1, PageSize: domain.DefaultPageSize})
 
 	if err != nil {
 		t.Fatalf("esperado sem erro, obteve: %v", err)
@@ -554,13 +554,13 @@ func TestProposalService_List_WithStatusFilter(t *testing.T) {
 	repo := defaultRepo(userID, helperID)
 
 	capturedFilter := ""
-	repo.ListByUserIDFn = func(uid uuid.UUID, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+	repo.ListByUserIDFn = func(uid uuid.UUID, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 		capturedFilter = statusFilter
 		return []domain.ProposalResponseDTO{}, nil
 	}
 
 	svc := proposalmodule.NewProposalService(repo)
-	svc.List(userID, utils.UserTypeBusiness, utils.ProposalStatusAccepted)
+	svc.List(userID, utils.UserTypeBusiness, utils.ProposalStatusAccepted, domain.PaginationParams{Page: 1, PageSize: domain.DefaultPageSize})
 
 	if capturedFilter != utils.ProposalStatusAccepted {
 		t.Errorf("esperado statusFilter '%s', obteve '%s'", utils.ProposalStatusAccepted, capturedFilter)

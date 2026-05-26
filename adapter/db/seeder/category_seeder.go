@@ -1,33 +1,25 @@
 package seeder
 
 import (
-	"fmt"
-
 	"github.com/5gMurilo/helptrix-api/core/domain"
-	"gorm.io/gorm"
+	categoryinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/category"
 )
 
-func SeedCategories(db *gorm.DB) error {
+func SeedCategories(svc categoryinterfaces.ICategoryService) error {
 	rows := []domain.Category{
-		{Name: "Residential cleaning", Description: "housekeeping, organization, and sanitizing of domestic spaces"},
-		{Name: "Plumber", Description: "installation and repair of pipes, faucets, and toilets"},
-		{Name: "Electrician", Description: "panels, outlets, lighting, and minor electrical repairs"},
-		{Name: "Gardening", Description: "pruning, planting, lawn and planter maintenance"},
-		{Name: "Child care", Description: "babysitting and supervision of children at agreed times"},
-		{Name: "Furniture assembly", Description: "assembly and disassembly of custom and modular furniture"},
-		{Name: "IT support", Description: "network setup, backup, and software guidance"},
-		{Name: "Local deliveries", Description: "pickup and delivery of parcels and documents in the city"},
-		{Name: "Private tutoring", Description: "homework help and on-demand study support"},
-		{Name: "Pet walks", Description: "walks and basic care for dogs in short sessions"},
+		{Name: "Residential Cleaning", Description: "Professional housekeeping, organization, and sanitizing of domestic spaces"},
+		{Name: "Plumbing", Description: "Installation and repair of pipes, faucets, and drainage systems"},
+		{Name: "Electrical Services", Description: "Installation, maintenance, and repair of electrical panels, outlets, and lighting"},
+		{Name: "Gardening & Landscaping", Description: "Lawn care, pruning, planting, and landscape maintenance services"},
+		{Name: "IT Support", Description: "Technical assistance for computers, networks, software setup, and troubleshooting"},
+		{Name: "Childcare & Babysitting", Description: "Professional childcare and supervised babysitting for families"},
+		{Name: "Furniture Assembly", Description: "Assembly, installation, and arrangement of modular and custom furniture"},
+		{Name: "Pet Care & Dog Walking", Description: "Dog walking, pet sitting, and basic care sessions for animals"},
+		{Name: "Private Tutoring", Description: "Personalized academic support and homework assistance for students of all levels"},
+		{Name: "Local Delivery & Errands", Description: "Pickup and delivery of parcels and documents within the city"},
+		{Name: "House Painting & Renovation", Description: "Interior and exterior painting, wall repair, and home renovation services"},
+		{Name: "Personal Chef & Meal Prep", Description: "Custom meal preparation and cooking services for individuals and events"},
 	}
 
-	for i := range rows {
-		row := rows[i]
-		res := db.Where("name = ?", row.Name).FirstOrCreate(&row)
-		if res.Error != nil {
-			return fmt.Errorf("seed category %q: %w", row.Name, res.Error)
-		}
-	}
-
-	return nil
+	return svc.Seed(rows)
 }

@@ -71,10 +71,13 @@ func (r *reviewRepository) Create(review *domain.Review) error {
 	return nil
 }
 
-func (r *reviewRepository) ListByBusiness(businessID uuid.UUID) ([]domain.Review, error) {
+func (r *reviewRepository) ListByBusiness(businessID uuid.UUID, p domain.PaginationParams) ([]domain.Review, error) {
 	var reviews []domain.Review
+	offset := (p.Page - 1) * p.PageSize
 	err := r.db.Where("business_id = ? AND deleted_at IS NULL", businessID).
 		Order("created_at DESC").
+		Offset(offset).
+		Limit(p.PageSize).
 		Find(&reviews).Error
 	if err != nil {
 		return nil, fmt.Errorf("error listing reviews by business: %w", err)
@@ -82,10 +85,13 @@ func (r *reviewRepository) ListByBusiness(businessID uuid.UUID) ([]domain.Review
 	return reviews, nil
 }
 
-func (r *reviewRepository) ListByHelper(helperID uuid.UUID) ([]domain.Review, error) {
+func (r *reviewRepository) ListByHelper(helperID uuid.UUID, p domain.PaginationParams) ([]domain.Review, error) {
 	var reviews []domain.Review
+	offset := (p.Page - 1) * p.PageSize
 	err := r.db.Where("helper_id = ? AND deleted_at IS NULL", helperID).
 		Order("created_at DESC").
+		Offset(offset).
+		Limit(p.PageSize).
 		Find(&reviews).Error
 	if err != nil {
 		return nil, fmt.Errorf("error listing reviews by helper: %w", err)

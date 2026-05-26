@@ -12,10 +12,15 @@ import (
 
 type mockCategoryRepository struct {
 	ListFn func() ([]domain.CategoryListItemResponseDTO, error)
+	SeedFn func(categories []domain.Category) error
 }
 
 func (m *mockCategoryRepository) List() ([]domain.CategoryListItemResponseDTO, error) {
 	return m.ListFn()
+}
+
+func (m *mockCategoryRepository) Seed(categories []domain.Category) error {
+	return m.SeedFn(categories)
 }
 
 var _ categoryinterfaces.ICategoryRepository = (*mockCategoryRepository)(nil)
@@ -64,6 +69,39 @@ func TestCategoryService_List_repoError(t *testing.T) {
 	svc := categorymodule.NewCategoryService(repo)
 	_, err := svc.List()
 	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestCategoryService_Seed_success(t *testing.T) {
+	var received []domain.Category
+	repo := &mockCategoryRepository{
+		SeedFn: func(categories []domain.Category) error {
+			received = categories
+			return nil
+		},
+	}
+	svc := categorymodule.NewCategoryService(repo)
+	input := []domain.Category{
+		{Name: "IT Support", Description: "Technical assistance"},
+		{Name: "Plumbing", Description: "Pipe installation and repair"},
+	}
+	if err := svc.Seed(input); err != nil {
+		t.Fatalf("Seed: %v", err)
+	}
+	if len(received) != 2 {
+		t.Fatalf("expected 2 categories, got %d", len(received))
+	}
+}
+
+func TestCategoryService_Seed_repoError(t *testing.T) {
+	repo := &mockCategoryRepository{
+		SeedFn: func(categories []domain.Category) error {
+			return errors.New("db down")
+		},
+	}
+	svc := categorymodule.NewCategoryService(repo)
+	if err := svc.Seed([]domain.Category{{Name: "X", Description: "Y"}}); err == nil {
 		t.Fatal("expected error")
 	}
 }

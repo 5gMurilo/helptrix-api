@@ -4,7 +4,9 @@ import (
 	"log"
 
 	"github.com/5gMurilo/helptrix-api/adapter/db"
+	"github.com/5gMurilo/helptrix-api/adapter/db/repository"
 	"github.com/5gMurilo/helptrix-api/adapter/db/seeder"
+	"github.com/5gMurilo/helptrix-api/modules/category"
 	"github.com/joho/godotenv"
 )
 
@@ -19,7 +21,10 @@ func main() {
 	}
 	defer db.Close(gormDB)
 
-	if err := seeder.SeedCategories(gormDB); err != nil {
+	categoryRepo := repository.NewCategoryRepository(gormDB)
+	categorySvc := category.NewCategoryService(categoryRepo)
+
+	if err := seeder.SeedCategories(categorySvc); err != nil {
 		log.Fatalf("seed: %v", err)
 	}
 

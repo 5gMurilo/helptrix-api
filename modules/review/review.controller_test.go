@@ -25,13 +25,13 @@ func (m *MockReviewService) CreateReview(businessID uuid.UUID, dto domain.Create
 	return args.Error(0)
 }
 
-func (m *MockReviewService) ListBusinessReviews(businessID uuid.UUID) ([]domain.ReviewListResponseDTO, error) {
-	args := m.Called(businessID)
+func (m *MockReviewService) ListBusinessReviews(businessID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error) {
+	args := m.Called(businessID, p)
 	return args.Get(0).([]domain.ReviewListResponseDTO), args.Error(1)
 }
 
-func (m *MockReviewService) ListHelperReviews(helperID uuid.UUID) ([]domain.ReviewListResponseDTO, error) {
-	args := m.Called(helperID)
+func (m *MockReviewService) ListHelperReviews(helperID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error) {
+	args := m.Called(helperID, p)
 	return args.Get(0).([]domain.ReviewListResponseDTO), args.Error(1)
 }
 
@@ -243,7 +243,7 @@ func TestReviewController_ListBusiness_Success(t *testing.T) {
 	c.Request = req
 	c.Set("authorization_payload", payload)
 
-	svc.On("ListBusinessReviews", businessID).Return(reviews, nil)
+	svc.On("ListBusinessReviews", businessID, mock.Anything).Return(reviews, nil)
 
 	ctrl := NewReviewController(svc)
 	ctrl.ListBusiness(c)
@@ -271,7 +271,7 @@ func TestReviewController_ListHelper_Success(t *testing.T) {
 	c.Request = req
 	c.Set("authorization_payload", payload)
 
-	svc.On("ListHelperReviews", helperID).Return(reviews, nil)
+	svc.On("ListHelperReviews", helperID, mock.Anything).Return(reviews, nil)
 
 	ctrl := NewReviewController(svc)
 	ctrl.ListHelper(c)
