@@ -166,7 +166,7 @@ func (s *ProposalService) UpdateStatus(
 	return toResponseDTO(*updated), nil
 }
 
-func (s *ProposalService) List(requesterID uuid.UUID, requesterType string, statusFilter string) ([]domain.ProposalResponseDTO, error) {
+func (s *ProposalService) List(requesterID uuid.UUID, requesterType string, statusFilter string, p domain.PaginationParams) ([]domain.ProposalResponseDTO, error) {
 	log := logger.Get().With(
 		slog.String("layer", "service"),
 		slog.String("module", "proposal"),
@@ -180,9 +180,9 @@ func (s *ProposalService) List(requesterID uuid.UUID, requesterType string, stat
 	)
 
 	if requesterType == utils.UserTypeBusiness {
-		result, err = s.repo.ListByUserID(requesterID, statusFilter)
+		result, err = s.repo.ListByUserID(requesterID, statusFilter, p)
 	} else {
-		result, err = s.repo.ListByHelperID(requesterID, statusFilter)
+		result, err = s.repo.ListByHelperID(requesterID, statusFilter, p)
 	}
 
 	if err != nil {

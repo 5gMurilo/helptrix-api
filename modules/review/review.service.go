@@ -68,7 +68,7 @@ func (s *ReviewService) CreateReview(businessID uuid.UUID, dto domain.CreateRevi
 	return nil
 }
 
-func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID) ([]domain.ReviewListResponseDTO, error) {
+func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error) {
 	log := logger.Get().With(
 		slog.String("layer", "service"),
 		slog.String("module", "review"),
@@ -76,7 +76,7 @@ func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID) ([]domain.Revi
 		slog.String("business_id", businessID.String()),
 	)
 
-	reviews, err := s.repo.ListByBusiness(businessID)
+	reviews, err := s.repo.ListByBusiness(businessID, p)
 	if err != nil {
 		log.Error("failed to list business reviews", slog.String("error", err.Error()))
 		return nil, err
@@ -95,7 +95,7 @@ func (s *ReviewService) ListBusinessReviews(businessID uuid.UUID) ([]domain.Revi
 	return result, nil
 }
 
-func (s *ReviewService) ListHelperReviews(helperID uuid.UUID) ([]domain.ReviewListResponseDTO, error) {
+func (s *ReviewService) ListHelperReviews(helperID uuid.UUID, p domain.PaginationParams) ([]domain.ReviewListResponseDTO, error) {
 	log := logger.Get().With(
 		slog.String("layer", "service"),
 		slog.String("module", "review"),
@@ -103,7 +103,7 @@ func (s *ReviewService) ListHelperReviews(helperID uuid.UUID) ([]domain.ReviewLi
 		slog.String("helper_id", helperID.String()),
 	)
 
-	reviews, err := s.repo.ListByHelper(helperID)
+	reviews, err := s.repo.ListByHelper(helperID, p)
 	if err != nil {
 		log.Error("failed to list helper reviews", slog.String("error", err.Error()))
 		return nil, err
