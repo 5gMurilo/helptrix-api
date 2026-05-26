@@ -57,10 +57,11 @@ func main() {
 
 	sqlDB, err := gormDB.DB()
 	if err != nil {
-		log.Fatalf("failed to get underlying sql.DB: %v", err)
+		log.Error("failed to get underlying sql.DB", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 	if _, err := sqlDB.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm"); err != nil {
-		log.Printf("warning: could not create pg_trgm extension: %v", err)
+		log.Warn("could not create pg_trgm extension", slog.String("error", err.Error()))
 	}
 
 	if err := gormDB.AutoMigrate(
@@ -78,7 +79,7 @@ func main() {
 	}
 
 	if _, err := sqlDB.Exec("CREATE INDEX IF NOT EXISTS idx_users_name_trgm ON users USING GIN (name gin_trgm_ops)"); err != nil {
-		log.Printf("warning: could not create trigram index on users.name: %v", err)
+		log.Warn("could not create trigram index on users.name", slog.String("error", err.Error()))
 	}
 
 	maker, err := auth.NewPasetoMaker(os.Getenv("PASETO_SYMMETRIC_KEY"))
