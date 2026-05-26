@@ -28,7 +28,7 @@ const (
 
 var (
 	CPFRegex      = regexp.MustCompile(`^(\d{11}|\d{16})$`)
-	CNPJRegex     = regexp.MustCompile(`^(\d{11}|\d{20}$`)
+	CNPJRegex     = regexp.MustCompile(`^(\d{11}|\d{20})$`)
 	TimeHHMMRegex = regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d$`)
 
 	ErrUserAlreadyRegistered     = errors.New("user already registered with this email and role")
