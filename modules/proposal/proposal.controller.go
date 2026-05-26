@@ -2,12 +2,14 @@ package proposal
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	proposalinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/proposal"
+	"github.com/5gMurilo/helptrix-api/core/logger"
 	"github.com/5gMurilo/helptrix-api/core/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -38,20 +40,29 @@ func NewProposalController(service proposalinterfaces.IProposalService) proposal
 //	@Router			/proposal [post]
 func (ctrl *ProposalController) Create(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "proposal"),
+		slog.String("operation", "Create"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	if payload.UserType != utils.UserTypeBusiness {
+		log.Warn("proposal creation forbidden: only business users can create proposals", slog.String("user_type", payload.UserType))
 		c.JSON(http.StatusForbidden, gin.H{"error": "only business users can create proposals"})
 		return
 	}
 
 	var dto domain.CreateProposalRequestDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Warn("invalid request body", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	userID, err := uuid.Parse(payload.UserID)
 	if err != nil {
+		log.Error("failed to parse user ID from token", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -59,9 +70,11 @@ func (ctrl *ProposalController) Create(c *gin.Context) {
 	response, err := ctrl.service.Create(dto, userID)
 	if err != nil {
 		if errors.Is(err, utils.ErrProposalAlreadyPendingForHelper) {
+			log.Warn("proposal creation conflict: pending proposal already exists", slog.String("error", err.Error()))
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("proposal creation failed with unexpected error", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -86,15 +99,23 @@ func (ctrl *ProposalController) Create(c *gin.Context) {
 //	@Router			/proposal/{id} [get]
 func (ctrl *ProposalController) GetByID(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "proposal"),
+		slog.String("operation", "GetByID"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	proposalID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		log.Warn("invalid proposal ID", slog.String("id_param", c.Param("id")))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid proposal id"})
 		return
 	}
 
 	requesterID, err := uuid.Parse(payload.UserID)
 	if err != nil {
+		log.Error("failed to parse requester ID from token", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -102,13 +123,16 @@ func (ctrl *ProposalController) GetByID(c *gin.Context) {
 	response, err := ctrl.service.GetByID(proposalID, requesterID)
 	if err != nil {
 		if errors.Is(err, utils.ErrProposalNotFound) {
+			log.Warn("proposal not found", slog.String("proposal_id", proposalID.String()))
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, utils.ErrNotProposalParticipant) {
+			log.Warn("proposal access denied: requester is not a participant", slog.String("proposal_id", proposalID.String()))
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("failed to get proposal", slog.String("error", err.Error()), slog.String("proposal_id", proposalID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -135,21 +159,30 @@ func (ctrl *ProposalController) GetByID(c *gin.Context) {
 //	@Router			/proposal/{id}/status [patch]
 func (ctrl *ProposalController) UpdateStatus(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "proposal"),
+		slog.String("operation", "UpdateStatus"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	proposalID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		log.Warn("invalid proposal ID", slog.String("id_param", c.Param("id")))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid proposal id"})
 		return
 	}
 
 	var dto domain.UpdateProposalStatusRequestDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Warn("invalid request body", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	requesterID, err := uuid.Parse(payload.UserID)
 	if err != nil {
+		log.Error("failed to parse requester ID from token", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -157,17 +190,21 @@ func (ctrl *ProposalController) UpdateStatus(c *gin.Context) {
 	response, err := ctrl.service.UpdateStatus(proposalID, dto, requesterID, payload.UserType)
 	if err != nil {
 		if errors.Is(err, utils.ErrProposalNotFound) {
+			log.Warn("status update failed: proposal not found", slog.String("proposal_id", proposalID.String()))
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, utils.ErrProposalUnauthorized) {
+			log.Warn("status update forbidden", slog.String("proposal_id", proposalID.String()), slog.String("error", err.Error()))
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, utils.ErrProposalInvalidStatus) || errors.Is(err, utils.ErrProposalFinished) {
+			log.Warn("status update rejected: invalid transition", slog.String("proposal_id", proposalID.String()), slog.String("error", err.Error()))
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("status update failed with unexpected error", slog.String("error", err.Error()), slog.String("proposal_id", proposalID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -189,11 +226,18 @@ func (ctrl *ProposalController) UpdateStatus(c *gin.Context) {
 //	@Router			/proposal [get]
 func (ctrl *ProposalController) List(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "proposal"),
+		slog.String("operation", "List"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	statusFilter := c.Query("status")
 
 	requesterID, err := uuid.Parse(payload.UserID)
 	if err != nil {
+		log.Error("failed to parse requester ID from token", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -202,6 +246,7 @@ func (ctrl *ProposalController) List(c *gin.Context) {
 
 	response, err := ctrl.service.List(requesterID, payload.UserType, statusFilter, p)
 	if err != nil {
+		log.Error("failed to list proposals", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}

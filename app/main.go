@@ -13,7 +13,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 
 	_ "github.com/5gMurilo/helptrix-api/docs"
@@ -27,6 +27,7 @@ import (
 	adapterstorage "github.com/5gMurilo/helptrix-api/adapter/storage"
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	uploaderinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/uploader"
+	"github.com/5gMurilo/helptrix-api/core/logger"
 	authmodule "github.com/5gMurilo/helptrix-api/modules/auth"
 	categorymodule "github.com/5gMurilo/helptrix-api/modules/category"
 	otpmodule "github.com/5gMurilo/helptrix-api/modules/otp"
@@ -40,13 +41,17 @@ import (
 )
 
 func main() {
+	logger.Init()
+	log := logger.Get()
+
 	if err := godotenv.Load(); err != nil {
-		log.Println("Warning: .env file not found or could not be loaded, relying on environment variables")
+		log.Warn("env file not found, relying on environment variables")
 	}
 
 	gormDB, err := db.Connect()
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Error("failed to connect to database", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 	defer db.Close(gormDB)
 
@@ -68,7 +73,8 @@ func main() {
 		&domain.OTP{},
 		&domain.Review{},
 	); err != nil {
-		log.Fatalf("failed to run database migrations: %v", err)
+		log.Error("failed to run database migrations", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	if _, err := sqlDB.Exec("CREATE INDEX IF NOT EXISTS idx_users_name_trgm ON users USING GIN (name gin_trgm_ops)"); err != nil {
@@ -77,7 +83,8 @@ func main() {
 
 	maker, err := auth.NewPasetoMaker(os.Getenv("PASETO_SYMMETRIC_KEY"))
 	if err != nil {
-		log.Fatalf("failed to create paseto maker: %v", err)
+		log.Error("failed to create paseto maker", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	authRepo := repository.NewAuthRepository(gormDB)
@@ -107,7 +114,8 @@ func main() {
 
 	storageClient, err := adapterstorage.NewFirebaseStorageClient(context.Background())
 	if err != nil {
-		log.Fatalf("failed to create firebase storage client: %v", err)
+		log.Error("failed to create firebase storage client", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	bucketName := os.Getenv("FIREBASE_STORAGE_BUCKET")
@@ -135,9 +143,10 @@ func main() {
 		port = "10000"
 	}
 
-	log.Printf("starting server on port %s", port)
+	log.Info("starting server", slog.String("port", port))
 
 	if err := router.Run(":" + port); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+		log.Error("failed to start server", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 }

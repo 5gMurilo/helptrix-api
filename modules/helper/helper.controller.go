@@ -2,12 +2,14 @@ package helper
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	helperinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/helper"
+	"github.com/5gMurilo/helptrix-api/core/logger"
 	"github.com/5gMurilo/helptrix-api/core/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -39,6 +41,12 @@ func NewHelperController(svc helperinterfaces.IHelperService) helperinterfaces.I
 //	@Router			/helper [get]
 func (ctrl *HelperController) List(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "helper"),
+		slog.String("operation", "List"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	params := domain.HelperSearchParams{
 		Name:     c.Query("name"),
@@ -68,9 +76,11 @@ func (ctrl *HelperController) List(c *gin.Context) {
 	result, err := ctrl.svc.Search(payload.UserType, params)
 	if err != nil {
 		if errors.Is(err, utils.ErrBusinessOnly) {
+			log.Warn("helper search forbidden: only business users can search helpers", slog.String("user_type", payload.UserType))
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("helper search failed with unexpected error", slog.String("error", err.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}

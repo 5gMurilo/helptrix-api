@@ -2,12 +2,14 @@ package user
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/5gMurilo/helptrix-api/adapter/auth"
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	userinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/user"
+	"github.com/5gMurilo/helptrix-api/core/logger"
 	"github.com/5gMurilo/helptrix-api/core/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -40,15 +42,23 @@ func NewUserController(svc userinterfaces.IUserService) userinterfaces.IUserCont
 //	@Router			/user/profile/{id} [get]
 func (ctrl *UserController) GetProfile(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "user"),
+		slog.String("operation", "GetProfile"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	targetID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		log.Warn("invalid target user ID", slog.String("id_param", c.Param("id")))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
 
 	requesterID, err := uuid.Parse(payload.UserID)
 	if err != nil {
+		log.Error("failed to parse requester ID from token", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid requester id"})
 		return
 	}
@@ -72,9 +82,11 @@ func (ctrl *UserController) GetProfile(c *gin.Context) {
 	response, err := ctrl.svc.GetProfile(requesterID, payload.UserType, targetID, filters)
 	if err != nil {
 		if errors.Is(err, utils.ErrUserNotFound) {
+			log.Warn("user profile not found", slog.String("target_id", targetID.String()))
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("failed to get user profile", slog.String("error", err.Error()), slog.String("target_id", targetID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -102,38 +114,51 @@ func (ctrl *UserController) GetProfile(c *gin.Context) {
 //	@Router			/user/profile/{id} [put]
 func (ctrl *UserController) UpdateProfile(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "user"),
+		slog.String("operation", "UpdateProfile"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	targetID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		log.Warn("invalid target user ID", slog.String("id_param", c.Param("id")))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
 
 	requesterID, err := uuid.Parse(payload.UserID)
 	if err != nil {
+		log.Error("failed to parse requester ID from token", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid requester id"})
 		return
 	}
 
 	var dto domain.UpdateProfileRequestDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		log.Warn("invalid request body", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := ctrl.svc.UpdateProfile(requesterID, targetID, dto); err != nil {
 		if errors.Is(err, utils.ErrNotOwner) {
+			log.Warn("update profile forbidden: requester is not the owner", slog.String("target_id", targetID.String()))
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, utils.ErrUserNotFound) {
+			log.Warn("update profile failed: user not found", slog.String("target_id", targetID.String()))
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, utils.ErrCategoryHasLinkedServices) {
+			log.Warn("update profile conflict: category has linked services", slog.String("error", err.Error()))
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("update profile failed with unexpected error", slog.String("error", err.Error()), slog.String("target_id", targetID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -159,28 +184,39 @@ func (ctrl *UserController) UpdateProfile(c *gin.Context) {
 //	@Router			/user/profile/{id} [delete]
 func (ctrl *UserController) DeleteProfile(c *gin.Context) {
 	payload := c.MustGet("authorization_payload").(*auth.Payload)
+	log := logger.Get().With(
+		slog.String("layer", "controller"),
+		slog.String("module", "user"),
+		slog.String("operation", "DeleteProfile"),
+		slog.String("user_id", payload.UserID),
+	)
 
 	targetID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		log.Warn("invalid target user ID", slog.String("id_param", c.Param("id")))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
 
 	requesterID, err := uuid.Parse(payload.UserID)
 	if err != nil {
+		log.Error("failed to parse requester ID from token", slog.String("error", err.Error()))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid requester id"})
 		return
 	}
 
 	if err := ctrl.svc.DeleteProfile(requesterID, targetID); err != nil {
 		if errors.Is(err, utils.ErrNotOwner) {
+			log.Warn("delete profile forbidden: requester is not the owner", slog.String("target_id", targetID.String()))
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 			return
 		}
 		if errors.Is(err, utils.ErrUserNotFound) {
+			log.Warn("delete profile failed: user not found", slog.String("target_id", targetID.String()))
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("delete profile failed with unexpected error", slog.String("error", err.Error()), slog.String("target_id", targetID.String()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}

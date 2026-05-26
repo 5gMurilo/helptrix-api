@@ -1,8 +1,11 @@
 package helper
 
 import (
+	"log/slog"
+
 	"github.com/5gMurilo/helptrix-api/core/domain"
 	helperinterfaces "github.com/5gMurilo/helptrix-api/core/interfaces/helper"
+	"github.com/5gMurilo/helptrix-api/core/logger"
 	"github.com/5gMurilo/helptrix-api/core/utils"
 )
 
@@ -15,7 +18,14 @@ func NewHelperService(repo helperinterfaces.IHelperRepository) helperinterfaces.
 }
 
 func (s *HelperService) Search(requesterType string, params domain.HelperSearchParams) (domain.HelperListResponseDTO, error) {
+	log := logger.Get().With(
+		slog.String("layer", "service"),
+		slog.String("module", "helper"),
+		slog.String("operation", "Search"),
+	)
+
 	if requesterType != utils.UserTypeBusiness {
+		log.Warn("helper search rejected: only business users can search helpers", slog.String("requester_type", requesterType))
 		return domain.HelperListResponseDTO{}, utils.ErrBusinessOnly
 	}
 
@@ -26,5 +36,11 @@ func (s *HelperService) Search(requesterType string, params domain.HelperSearchP
 		params.PageSize = 20
 	}
 
-	return s.repo.Search(params)
+	result, err := s.repo.Search(params)
+	if err != nil {
+		log.Error("failed to search helpers", slog.String("error", err.Error()))
+		return domain.HelperListResponseDTO{}, err
+	}
+
+	return result, nil
 }

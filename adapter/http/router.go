@@ -32,6 +32,7 @@ func NewRouter(
 	reviewCtrl reviewinterfaces.IReviewController,
 ) *gin.Engine {
 	router := gin.Default()
+	router.Use(middleware.RequestLogger())
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
