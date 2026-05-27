@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go/v4"
@@ -104,4 +105,47 @@ func (c *FirebaseStorageClient) DeleteFile(ctx context.Context, objectPath strin
 		return fmt.Errorf("error deleting object %q: %w", objectPath, err)
 	}
 	return nil
+}
+
+type lazyFirebaseStorageClient struct {
+	once    sync.Once
+	inner   storageinterfaces.IStorageService
+	initErr error
+	ctx     context.Context
+}
+
+// NewLazyFirebaseStorageClient returns a storage client that defers Firebase
+// initialisation until the first upload or delete call. This keeps app startup
+// fast even when Google's auth round-trips are slow.
+func NewLazyFirebaseStorageClient(ctx context.Context) storageinterfaces.IStorageService {
+	return &lazyFirebaseStorageClient{ctx: ctx}
+}
+
+func (l *lazyFirebaseStorageClient) initialize() {
+	l.once.Do(func() {
+		l.inner, l.initErr = NewFirebaseStorageClient(l.ctx)
+	})
+}
+
+func (l *lazyFirebaseStorageClient) UploadFile(
+	ctx context.Context,
+	folder string,
+	ownerID string,
+	filename string,
+	data []byte,
+	contentType string,
+) (string, error) {
+	l.initialize()
+	if l.initErr != nil {
+		return "", fmt.Errorf("firebase storage unavailable: %w", l.initErr)
+	}
+	return l.inner.UploadFile(ctx, folder, ownerID, filename, data, contentType)
+}
+
+func (l *lazyFirebaseStorageClient) DeleteFile(ctx context.Context, objectPath string) error {
+	l.initialize()
+	if l.initErr != nil {
+		return fmt.Errorf("firebase storage unavailable: %w", l.initErr)
+	}
+	return l.inner.DeleteFile(ctx, objectPath)
 }

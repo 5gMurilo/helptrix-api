@@ -60,27 +60,29 @@ func main() {
 		log.Error("failed to get underlying sql.DB", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-	if _, err := sqlDB.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm"); err != nil {
-		log.Warn("could not create pg_trgm extension", slog.String("error", err.Error()))
-	}
 
-	if err := gormDB.AutoMigrate(
-		&domain.Category{},
-		&domain.User{},
-		&domain.Address{},
-		&domain.UserCategory{},
-		&domain.Service{},
-		&domain.Proposal{},
-		&domain.OTP{},
-		&domain.Review{},
-	); err != nil {
-		log.Error("failed to run database migrations", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
+	go func() {
+		if _, err := sqlDB.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm"); err != nil {
+			log.Warn("could not create pg_trgm extension", slog.String("error", err.Error()))
+		}
 
-	if _, err := sqlDB.Exec("CREATE INDEX IF NOT EXISTS idx_users_name_trgm ON users USING GIN (name gin_trgm_ops)"); err != nil {
-		log.Warn("could not create trigram index on users.name", slog.String("error", err.Error()))
-	}
+		if err := gormDB.AutoMigrate(
+			&domain.Category{},
+			&domain.User{},
+			&domain.Address{},
+			&domain.UserCategory{},
+			&domain.Service{},
+			&domain.Proposal{},
+			&domain.OTP{},
+			&domain.Review{},
+		); err != nil {
+			log.Error("failed to run database migrations", slog.String("error", err.Error()))
+		}
+
+		if _, err := sqlDB.Exec("CREATE INDEX IF NOT EXISTS idx_users_name_trgm ON users USING GIN (name gin_trgm_ops)"); err != nil {
+			log.Warn("could not create trigram index on users.name", slog.String("error", err.Error()))
+		}
+	}()
 
 	maker, err := auth.NewPasetoMaker(os.Getenv("PASETO_SYMMETRIC_KEY"))
 	if err != nil {
@@ -113,11 +115,7 @@ func main() {
 	otpSvc := otpmodule.NewOtpService(otpRepo, emailSender)
 	otpCtrl := otpmodule.NewOtpController(otpSvc)
 
-	storageClient, err := adapterstorage.NewFirebaseStorageClient(context.Background())
-	if err != nil {
-		log.Error("failed to create firebase storage client", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
+	storageClient := adapterstorage.NewLazyFirebaseStorageClient(context.Background())
 
 	bucketName := os.Getenv("FIREBASE_STORAGE_BUCKET")
 

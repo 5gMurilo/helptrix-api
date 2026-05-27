@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: helptrix-api
+    runtime: go
+    plan: free
+    region: ohio
+    branch: main
+    autoDeploy: true
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o ./tmp/main ./app/...
+    startCommand: ./tmp/main
+    healthCheckPath: /health
