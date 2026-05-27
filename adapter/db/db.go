@@ -18,7 +18,10 @@ func postgresConnectionURL() string {
 func Connect() (*gorm.DB, error) {
 
 	if dsn := postgresConnectionURL(); dsn != "" {
-		return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		return gorm.Open(postgres.New(postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true,
+		}), &gorm.Config{})
 	}
 
 	dsn := fmt.Sprintf(
@@ -31,7 +34,10 @@ func Connect() (*gorm.DB, error) {
 		os.Getenv("DB_SSLMODE"),
 	)
 
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	return gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{})
 }
 
 func Close(db *gorm.DB) {
